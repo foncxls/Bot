@@ -27,6 +27,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const upload = multer({ dest: 'uploads/' });
 
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
 app.use(express.json());
 
 app.use((err, req, res, next) => {
@@ -37,6 +47,7 @@ app.use((err, req, res, next) => {
 });
 
 const SESSIONS_DIR = path.join(__dirname, 'sessions');
+const DB_FILE = path.join(__dirname, 'database.json');
 const DB_DIR = path.join(__dirname, 'Database');
 const CHATS_DIR = path.join(DB_DIR, 'chats');
 const USERS_DIR = path.join(DB_DIR, 'users');
@@ -460,6 +471,15 @@ async function loadSavedSessions() {
         }
     }
 }
+
+app.get('/', (req, res) => {
+    const htmlPath = path.join(__dirname, 'index.html');
+    if (fs.existsSync(htmlPath)) {
+        res.sendFile(htmlPath);
+    } else {
+        res.send('Server API Berjalan. File index.html tidak ditemukan.');
+    }
+});
 
 app.all('/api/test-ai', async (req, res) => {
     const message = req.query.message || req.body?.message || "Halo sayang, lagi apa hari ini?";

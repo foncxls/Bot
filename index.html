@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zack Bot Control Center</title>
+
+    <!-- Google Font Orbitron -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #070913;
+            --card-bg: rgba(16, 22, 38, 0.85);
+            --primary-cyan: #00f3ff;
+            --primary-purple: #bc13fe;
+            --text-color: #e0e6ed;
+            --text-dim: #8292a1;
+            --border-glow: rgba(0, 243, 255, 0.25);
+            --danger: #ff2a6d;
+            --success: #05ffa1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Orbitron', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(188, 19, 254, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.08) 0%, transparent 40%);
+        }
+
+        /* Header */
+        header {
+            padding: 15px 20px;
+            background: rgba(10, 13, 24, 0.9);
+            border-bottom: 1px solid var(--border-glow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--primary-cyan);
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .api-badge {
+            font-size: 0.65rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(5, 255, 161, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .api-badge.offline {
+            background: rgba(255, 42, 109, 0.1);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .pulse-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: currentColor;
+            box-shadow: 0 0 8px currentColor;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        /* Main Slide Container */
+        .main-container {
+            flex: 1;
+            display: flex;
+            width: 500%;
+            height: calc(100vh - 125px);
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .slide {
+            width: 20%;
+            height: 100%;
+            padding: 15px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Card Component */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-title {
+            font-size: 0.85rem;
+            color: var(--primary-cyan);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Grid Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-box .number {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary-purple);
+            text-shadow: 0 0 10px rgba(188, 19, 254, 0.4);
+        }
+
+        .stat-box .label {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(5, 8, 18, 0.8);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.8rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+        }
+
+        textarea.form-control {
+            resize: none;
+            height: 70px;
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-purple));
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            color: #000;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff2a6d, #9a0036);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(255, 42, 109, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            box-shadow: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Pairing Code Display */
+        .pairing-box {
+            text-align: center;
+            background: rgba(0, 243, 255, 0.05);
+            border: 1px dashed var(--primary-cyan);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .pairing-code {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary-cyan);
+            letter-spacing: 4px;
+            margin: 8px 0;
+            text-shadow: 0 0 15px var(--primary-cyan);
+        }
+
+        /* Chat Monitoring List */
+        .chat-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid var(--primary-cyan);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+        }
+
+        .chat-item.assistant {
+            border-left-color: var(--primary-purple);
+            background: rgba(188, 19, 254, 0.03);
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-dim);
+            font-size: 0.6rem;
+            margin-bottom: 4px;
+        }
+
+        .chat-user {
+            color: var(--primary-cyan);
+            font-weight: 700;
+        }
+
+        .chat-item.assistant .chat-user {
+            color: var(--primary-purple);
+        }
+
+        .chat-body {
+            color: #fff;
+            word-break: break-word;
+        }
+
+        /* Bot Badge List */
+        .bot-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .bot-info {
+            font-size: 0.75rem;
+        }
+
+        .bot-num {
+            color: var(--primary-cyan);
+            font-weight: 700;
+        }
+
+        .bot-target {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* Bottom Navigation Bar */
+        nav.bottom-nav {
+            height: 60px;
+            background: rgba(10, 13, 24, 0.95);
+            border-top: 1px solid var(--border-glow);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-dim);
+            font-size: 0.6rem;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 20%;
+        }
+
+        .nav-item i {
+            font-size: 1.1rem;
+        }
+
+        .nav-item.active {
+            color: var(--primary-cyan);
+            text-shadow: 0 0 10px var(--primary-cyan);
+        }
+
+        .nav-item.active i {
+            transform: translateY(-2px);
+        }
+
+        /* Toast Popup */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(16, 22, 38, 0.95);
+            border: 1px solid var(--primary-cyan);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            z-index: 1000;
+            transition: transform 0.4s ease;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <h1><i class="fa-solid fa-microchip"></i> ZACK CONTROL</h1>
+        <div class="api-badge" id="apiStatusBadge">
+            <div class="pulse-dot"></div>
+            <span id="apiStatusText">CONNECTING...</span>
+        </div>
+    </header>
+
+    <!-- Slide Container -->
+    <div class="main-container" id="slideContainer">
+
+        <!-- SLIDE 1: DASHBOARD -->
+        <div class="slide">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="number" id="statBotCount">0</div>
+                    <div class="label">BOT AKTIF</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number" id="statLogsCount">0</div>
+                    <div class="label">LOG CHAT</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-satellite-dish"></i> LIVE MONITORING</div>
+                <div class="chat-list" id="monitoringLogs">
+                    <div style="text-align:center; font-size:0.7rem; color:var(--text-dim); padding:20px;">Memuat data...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: PAIRING & ZIP -->
+        <div class="slide">
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-qrcode"></i> GENERATE PAIRING CODE</div>
+                <div class="form-group">
+                    <label>Nomor WhatsApp Bot</label>
+                    <input type="number" id="pairNumber" class="form-control" placeholder="Contoh: 628123456789">
+                </div>
+                <button class="btn" onclick="requestPairing()"><i class="fa-solid fa-key"></i> Minta Kode</button>
+
+                <div class="pairing-box" id="pairingBox">
+                    <div style="font-size:0.65rem; color:var(--text-dim);">KODE PAIRING ANDA</div>
+                    <div class="pairing-code" id="pairingCodeVal">----</div>
+                    <div style="font-size:0.6rem; color:var(--text-dim);">Masukkan kode ini di WhatsApp HP Anda</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-file-zipper"></i> UPLOAD SESSION ZIP</div>
+                <div class="form-group">
+                    <label>Nomor Bot</label>
+                    <input type="number" id="zipNumber" class="form-control" placeholder="Contoh: 628123456789">
+                </div>
+                <div class="form-group">
+                    <label>File Sesi (.ZIP)</label>
+                    <input type="file" id="zipFile" accept=".zip" class="form-control">
+                </div>
+                <button class="btn" onclick="uploadZipSession()"><i class="fa-solid fa-upload"></i> Upload & Jalankan</button>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: BOT MANAGEMENT -->
+        <div class="slide">
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-robot"></i> DAFTAR BOT TERHUBUNG</div>
+                <div id="botListContainer">
+                    <div style="text-align:center; font-size:0.7rem; color:var(--text-dim); padding:15px;">Belum ada bot terhubung.</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-id-card"></i> UPDATE PROFIL BOT</div>
+                <div class="form-group">
+                    <label>Nomor Bot</label>
+                    <input type="number" id="profileBotNum" class="form-control" placeholder="628123456789">
+                </div>
+                <div class="form-group">
+                    <label>Nama Baru (PushName)</label>
+                    <input type="text" id="profileName" class="form-control" placeholder="Nama Bot">
+                </div>
+                <div class="form-group">
+                    <label>Bio Baru (Status)</label>
+                    <input type="text" id="profileBio" class="form-control" placeholder="Status WhatsApp">
+                </div>
+                <div class="form-group">
+                    <label>URL Foto Profil</label>
+                    <input type="url" id="profileImgUrl" class="form-control" placeholder="https://site.com/foto.jpg">
+                </div>
+                <button class="btn" onclick="updateProfile()"><i class="fa-solid fa-floppy-disk"></i> Simpan Profil</button>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: SEND MESSAGE & MEDIA -->
+        <div class="slide">
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-paper-plane"></i> KIRIM PESAN TEKS</div>
+                <div class="form-group">
+                    <label>Dari Bot (Nomor)</label>
+                    <input type="number" id="sendMsgBot" class="form-control" placeholder="628xxx">
+                </div>
+                <div class="form-group">
+                    <label>Ke Nomor / JID Target</label>
+                    <input type="text" id="sendMsgTarget" class="form-control" placeholder="628xxx">
+                </div>
+                <div class="form-group">
+                    <label>Pesan</label>
+                    <textarea id="sendMsgText" class="form-control" placeholder="Ketik pesan di sini..."></textarea>
+                </div>
+                <button class="btn" onclick="sendTextMessage()"><i class="fa-solid fa-paper-plane"></i> Kirim Pesan</button>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-photo-film"></i> KIRIM MEDIA</div>
+                <div class="form-group">
+                    <label>Dari Bot (Nomor)</label>
+                    <input type="number" id="mediaBot" class="form-control" placeholder="628xxx">
+                </div>
+                <div class="form-group">
+                    <label>Ke Target</label>
+                    <input type="text" id="mediaTarget" class="form-control" placeholder="628xxx">
+                </div>
+                <div class="form-group">
+                    <label>Tipe Media</label>
+                    <select id="mediaType" class="form-control">
+                        <option value="image">Gambar (Image)</option>
+                        <option value="video">Video</option>
+                        <option value="audio">Audio / Voice Note</option>
+                        <option value="document">Dokumen / File</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>URL Media</label>
+                    <input type="url" id="mediaUrl" class="form-control" placeholder="https://site.com/file.png">
+                </div>
+                <div class="form-group">
+                    <label>Caption / Description</label>
+                    <input type="text" id="mediaCaption" class="form-control" placeholder="Keterangan file...">
+                </div>
+                <button class="btn" onclick="sendMediaMessage()"><i class="fa-solid fa-file-export"></i> Kirim Media</button>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: MEMORY & TOOLS -->
+        <div class="slide">
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-brain"></i> MEMORI FAKTA ZACK</div>
+                <div class="form-group">
+                    <label>Nama Fakta (Key)</label>
+                    <input type="text" id="factKey" class="form-control" placeholder="Contoh: Makanan Favorit">
+                </div>
+                <div class="form-group">
+                    <label>Isi Fakta (Value)</label>
+                    <input type="text" id="factVal" class="form-control" placeholder="Contoh: Nasi Goreng Pedas">
+                </div>
+                <button class="btn" onclick="saveFact()"><i class="fa-solid fa-memory"></i> Simpan Memori AI</button>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-ban"></i> BLOCK / UNBLOCK</div>
+                <div class="form-group">
+                    <label>Dari Bot (Nomor)</label>
+                    <input type="number" id="blockBot" class="form-control" placeholder="628xxx">
+                </div>
+                <div class="form-group">
+                    <label>Target User JID / Nomor</label>
+                    <input type="text" id="blockTarget" class="form-control" placeholder="628xxx">
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-danger" style="flex:1;" onclick="toggleBlock('block')"><i class="fa-solid fa-user-slash"></i> Blokir</button>
+                    <button class="btn btn-secondary" style="flex:1;" onclick="toggleBlock('unblock')"><i class="fa-solid fa-user-check"></i> Unblock</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-address-book"></i> KONTAK TERSIMPAN</div>
+                <div id="contactListContainer" style="font-size:0.7rem;">
+                    <div style="text-align:center; color:var(--text-dim); padding:10px;">Memuat kontak...</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="goToSlide(0)">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Dash</span>
+        </div>
+        <div class="nav-item" onclick="goToSlide(1)">
+            <i class="fa-solid fa-qrcode"></i>
+            <span>Pair</span>
+        </div>
+        <div class="nav-item" onclick="goToSlide(2)">
+            <i class="fa-solid fa-robot"></i>
+            <span>Bots</span>
+        </div>
+        <div class="nav-item" onclick="goToSlide(3)">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>Kirim</span>
+        </div>
+        <div class="nav-item" onclick="goToSlide(4)">
+            <i class="fa-solid fa-brain"></i>
+            <span>Memori</span>
+        </div>
+    </nav>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">Notifikasi Sistem</div>
+
+    <script>
+        const API_BASE = 'https://botzack.up.railway.app';
+        let currentSlide = 0;
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            document.getElementById('slideContainer').style.transform = `translateX(-${index * 20}%)`;
+            
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach((item, i) => {
+                if (i === index) item.classList.add('active');
+                else item.classList.remove('active');
+            });
+
+            if (index === 0) fetchMonitoring();
+            if (index === 2) fetchBots();
+            if (index === 4) fetchContacts();
+        }
+
+        async function checkAPIStatus() {
+            try {
+                const res = await fetch(`${API_BASE}/api/bots`);
+                if (res.ok) {
+                    document.getElementById('apiStatusBadge').classList.remove('offline');
+                    document.getElementById('apiStatusText').innerText = 'ONLINE';
+                } else throw new Error();
+            } catch (e) {
+                document.getElementById('apiStatusBadge').classList.add('offline');
+                document.getElementById('apiStatusText').innerText = 'OFFLINE';
+            }
+        }
+
+        async function fetchMonitoring() {
+            try {
+                const res = await fetch(`${API_BASE}/api/monitoring`);
+                const data = await res.json();
+                if (data.status) {
+                    document.getElementById('statBotCount').innerText = data.totalActiveBots || 0;
+                    document.getElementById('statLogsCount').innerText = data.recentChatLogs ? data.recentChatLogs.length : 0;
+
+                    const container = document.getElementById('monitoringLogs');
+                    if (!data.recentChatLogs || data.recentChatLogs.length === 0) {
+                        container.innerHTML = '<div style="text-align:center; font-size:0.7rem; color:var(--text-dim); padding:20px;">Belum ada log pesan.</div>';
+                        return;
+                    }
+
+                    container.innerHTML = data.recentChatLogs.map(log => `
+                        <div class="chat-item ${log.role}">
+                            <div class="chat-header">
+                                <span class="chat-user">${log.userName} (${log.isZack ? 'Zack ❤️' : 'Orang Lain'})</span>
+                                <span>${new Date(log.timestamp).toLocaleTimeString()}</span>
+                            </div>
+                            <div class="chat-body">${log.content}</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                showToast('Gagal memuat monitoring');
+            }
+        }
+
+        async function requestPairing() {
+            const num = document.getElementById('pairNumber').value;
+            if (!num) return showToast('Masukkan nomor bot!');
+
+            showToast('Meminta kode pairing...');
+            try {
+                const res = await fetch(`${API_BASE}/api/pairing?number=${num}`);
+                const data = await res.json();
+
+                if (data.status) {
+                    document.getElementById('pairingBox').style.display = 'block';
+                    document.getElementById('pairingCodeVal').innerText = data.pairingCode || '----';
+                    showToast('Kode pairing berhasil didapat!');
+                } else {
+                    showToast(data.message);
+                }
+            } catch (e) {
+                showToast('Gagal terhubung ke API');
+            }
+        }
+
+        async function uploadZipSession() {
+            const num = document.getElementById('zipNumber').value;
+            const fileInput = document.getElementById('zipFile');
+
+            if (!num || fileInput.files.length === 0) return showToast('Isi nomor dan pilih file .zip!');
+
+            const formData = new FormData();
+            formData.append('number', num);
+            formData.append('sessionZip', fileInput.files[0]);
+
+            showToast('Mengupload sesi zip...');
+            try {
+                const res = await fetch(`${API_BASE}/api/upload-session`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                showToast(data.message);
+            } catch (e) {
+                showToast('Gagal upload sesi zip');
+            }
+        }
+
+        async function fetchBots() {
+            try {
+                const res = await fetch(`${API_BASE}/api/bots`);
+                const data = await res.json();
+                const container = document.getElementById('botListContainer');
+
+                if (data.status && data.bots.length > 0) {
+                    container.innerHTML = data.bots.map(bot => `
+                        <div class="bot-card">
+                            <div class="bot-info">
+                                <div class="bot-num">${bot.number}</div>
+                                <div class="bot-target">Target: ${bot.targetJid} | Status: ${bot.status}</div>
+                            </div>
+                            <button class="btn btn-danger" style="padding:6px 12px; font-size:0.6rem;" onclick="deleteBot('${bot.number}')">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="text-align:center; font-size:0.7rem; color:var(--text-dim); padding:15px;">Belum ada bot terhubung.</div>';
+                }
+            } catch (e) {
+                showToast('Gagal memuat list bot');
+            }
+        }
+
+        async function deleteBot(num) {
+            if (!confirm(`Hapus sesi bot ${num}?`)) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/bot/${num}`, { method: 'DELETE' });
+                const data = await res.json();
+                showToast(data.message);
+                fetchBots();
+            } catch (e) {
+                showToast('Gagal menghapus bot');
+            }
+        }
+
+        async function updateProfile() {
+            const number = document.getElementById('profileBotNum').value;
+            const name = document.getElementById('profileName').value;
+            const bio = document.getElementById('profileBio').value;
+            const imageUrl = document.getElementById('profileImgUrl').value;
+
+            if (!number) return showToast('Isi nomor bot!');
+
+            try {
+                const res = await fetch(`${API_BASE}/api/profile`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number, name, bio, imageUrl })
+                });
+                const data = await res.json();
+                showToast(data.message);
+            } catch (e) {
+                showToast('Gagal update profil');
+            }
+        }
+
+        async function sendTextMessage() {
+            const number = document.getElementById('sendMsgBot').value;
+            const targetJid = document.getElementById('sendMsgTarget').value;
+            const message = document.getElementById('sendMsgText').value;
+
+            if (!number || !targetJid || !message) return showToast('Isi semua field pesan!');
+
+            try {
+                const res = await fetch(`${API_BASE}/api/send-message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number, targetJid, message })
+                });
+                const data = await res.json();
+                showToast(data.message);
+            } catch (e) {
+                showToast('Gagal mengirim pesan');
+            }
+        }
+
+        async function sendMediaMessage() {
+            const number = document.getElementById('mediaBot').value;
+            const targetJid = document.getElementById('mediaTarget').value;
+            const type = document.getElementById('mediaType').value;
+            const mediaUrl = document.getElementById('mediaUrl').value;
+            const caption = document.getElementById('mediaCaption').value;
+
+            if (!number || !targetJid || !mediaUrl) return showToast('Isi semua field media!');
+
+            try {
+                const res = await fetch(`${API_BASE}/api/send-media`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number, targetJid, type, mediaUrl, caption })
+                });
+                const data = await res.json();
+                showToast(data.message);
+            } catch (e) {
+                showToast('Gagal mengirim media');
+            }
+        }
+
+        async function saveFact() {
+            const factKey = document.getElementById('factKey').value;
+            const factValue = document.getElementById('factVal').value;
+
+            if (!factKey || !factValue) return showToast('Isi nama dan nilai fakta!');
+
+            try {
+                const res = await fetch(`${API_BASE}/api/facts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ factKey, factValue })
+                });
+                const data = await res.json();
+                showToast(data.message);
+            } catch (e) {
+                showToast('Gagal menyimpan memori');
+            }
+        }
+
+        async function toggleBlock(action) {
+            const number = document.getElementById('blockBot').value;
+            const targetJid = document.getElementById('blockTarget').value;
+
+            if (!number || !targetJid) return showToast('Isi nomor bot & target!');
+
+            const endpoint = action === 'block' ? '/api/block' : '/api/unblock';
+            try {
+                const res = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number, targetJid })
+                });
+                const data = await res.json();
+                showToast(data.message);
+            } catch (e) {
+                showToast('Gagal melakukan aksi blokir');
+            }
+        }
+
+        async function fetchContacts() {
+            try {
+                const res = await fetch(`${API_BASE}/api/contacts`);
+                const data = await res.json();
+                const container = document.getElementById('contactListContainer');
+
+                if (data.status && data.contacts.length > 0) {
+                    container.innerHTML = data.contacts.map(c => `
+                        <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <div>
+                                <span style="color:var(--primary-cyan); font-weight:700;">${c.pushName}</span> 
+                                ${c.isZack ? '<span style="color:var(--primary-purple); font-size:0.6rem;">[Zack ❤️]</span>' : ''}
+                                <div style="color:var(--text-dim); font-size:0.6rem;">${c.number}</div>
+                            </div>
+                            <div style="font-size:0.55rem; color:var(--text-dim);">${new Date(c.lastSeen).toLocaleDateString()}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="text-align:center; color:var(--text-dim); padding:10px;">Belum ada kontak tersimpan.</div>';
+                }
+            } catch (e) {
+                showToast('Gagal memuat kontak');
+            }
+        }
+
+        // Auto Refresh Dashboard
+        checkAPIStatus();
+        fetchMonitoring();
+        setInterval(() => {
+            checkAPIStatus();
+            if (currentSlide === 0) fetchMonitoring();
+        }, 5000);
+    </script>
+</body>
+</html>
