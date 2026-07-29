@@ -1,0 +1,21 @@
+{
+  "name": "bot",
+  "version": "1.0.0",
+  "description": "Base Bot Simpel 1.0.0",
+  "license": "ISC",
+  "author": "Zack",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "awesome-phonenumber": "^7.8.0",
+    "baileys": "^7.0.0-rc14",
+    "chalk": "^6.0.0",
+    "express": "^5.2.1",
+    "pino": "^10.3.1",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
