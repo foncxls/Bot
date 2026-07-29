@@ -5,80 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Zack Bot Control Center</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome untuk ikon seperlunya -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
-        :root {
-            --bg-color: #070913;
-            --card-bg: rgba(16, 22, 38, 0.85);
-            --primary-cyan: #00f3ff;
-            --primary-purple: #bc13fe;
-            --text-color: #e0e6ed;
-            --text-dim: #8292a1;
-            --border-glow: rgba(0, 243, 255, 0.25);
-            --danger: #ff2a6d;
-            --success: #05ffa1;
-        }
-
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Orbitron', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(188, 19, 254, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.08) 0%, transparent 40%);
+            background-color: #f4f6f8;
+            color: #222222;
+            padding-bottom: 20px;
         }
 
+        /* HEADER */
         header {
-            padding: 15px 20px;
-            background: rgba(10, 13, 24, 0.9);
-            border-bottom: 1px solid var(--border-glow);
+            background: #ffffff;
+            border-bottom: 1px solid #e1e4e8;
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
             z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .burger-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #333;
+            cursor: pointer;
+            padding: 4px;
         }
 
         header h1 {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--primary-cyan);
-            letter-spacing: 1px;
-            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #111;
         }
 
         .api-badge {
-            font-size: 0.65rem;
+            font-size: 0.7rem;
+            font-weight: 600;
             padding: 4px 10px;
-            border-radius: 20px;
-            background: rgba(5, 255, 161, 0.1);
-            border: 1px solid var(--success);
-            color: var(--success);
+            border-radius: 12px;
+            background: #e6f4ea;
+            border: 1px solid #34a853;
+            color: #1e7e34;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
         }
 
         .api-badge.offline {
-            background: rgba(255, 42, 109, 0.1);
-            border-color: var(--danger);
-            color: var(--danger);
+            background: #fce8e6;
+            border-color: #d93025;
+            color: #d93025;
         }
 
         .pulse-dot {
@@ -86,64 +82,123 @@
             height: 6px;
             border-radius: 50%;
             background-color: currentColor;
-            box-shadow: 0 0 8px currentColor;
-            animation: pulse 1.5s infinite;
         }
 
-        @keyframes pulse {
-            0% { opacity: 0.4; }
-            50% { opacity: 1; }
-            100% { opacity: 0.4; }
-        }
-
-        .main-container {
-            flex: 1;
-            display: flex;
-            width: 500%;
-            height: calc(100vh - 125px);
-            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-        .slide {
-            width: 20%;
+        /* SIDE DRAWER (BURGER MENU) */
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
             height: 100%;
-            padding: 15px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 200;
+            display: none;
         }
 
+        .drawer-overlay.active {
+            display: block;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            left: -260px;
+            width: 260px;
+            height: 100%;
+            background: #ffffff;
+            z-index: 201;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .drawer.active {
+            left: 0;
+        }
+
+        .drawer-header {
+            padding: 16px;
+            border-bottom: 1px solid #e1e4e8;
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .drawer-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .drawer-menu {
+            list-style: none;
+            padding: 10px 0;
+        }
+
+        .drawer-menu li {
+            padding: 14px 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #444;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+
+        .drawer-menu li.active {
+            background: #eef2ff;
+            color: #2563eb;
+            border-left-color: #2563eb;
+            font-weight: 700;
+        }
+
+        /* CONTAINER SECTIONS */
+        .page-section {
+            display: none;
+            padding: 12px;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        /* CARDS & FORM */
         .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-glow);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
         }
 
         .card-title {
             font-size: 0.85rem;
-            color: var(--primary-cyan);
+            font-weight: 700;
+            color: #111827;
             margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            border-bottom: 1px solid #f3f4f6;
+            padding-bottom: 6px;
         }
 
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .stat-box {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
             padding: 12px;
             text-align: center;
         }
@@ -151,146 +206,140 @@
         .stat-box .number {
             font-size: 1.4rem;
             font-weight: 700;
-            color: var(--primary-purple);
-            text-shadow: 0 0 10px rgba(188, 19, 254, 0.4);
+            color: #2563eb;
         }
 
         .stat-box .label {
-            font-size: 0.6rem;
-            color: var(--text-dim);
-            margin-top: 4px;
+            font-size: 0.65rem;
+            color: #6b7280;
+            margin-top: 2px;
+            font-weight: 600;
         }
 
         .form-group {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .form-group label {
             display: block;
-            font-size: 0.65rem;
-            color: var(--text-dim);
-            margin-bottom: 5px;
-            text-transform: uppercase;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
         }
 
         .form-control {
             width: 100%;
-            background: rgba(5, 8, 18, 0.8);
-            border: 1px solid rgba(0, 243, 255, 0.2);
-            padding: 10px 12px;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 0.8rem;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            padding: 10px;
+            border-radius: 6px;
+            color: #111827;
+            font-size: 0.85rem;
             outline: none;
-            transition: all 0.3s;
         }
 
         .form-control:focus {
-            border-color: var(--primary-cyan);
-            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+            border-color: #2563eb;
         }
 
         textarea.form-control {
-            resize: none;
+            resize: vertical;
             height: 70px;
         }
 
+        /* BUTTONS */
         .btn {
             width: 100%;
-            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-purple));
+            background: #2563eb;
             border: none;
-            padding: 12px;
-            border-radius: 8px;
-            color: #000;
-            font-size: 0.75rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            padding: 10px;
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: 600;
             cursor: pointer;
+            text-align: center;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+            gap: 6px;
         }
 
         .btn:active {
-            transform: scale(0.98);
+            opacity: 0.85;
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, #ff2a6d, #9a0036);
-            color: #fff;
-            box-shadow: 0 0 15px rgba(255, 42, 109, 0.3);
+            background: #dc2626;
+            color: #ffffff;
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            box-shadow: none;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: #e5e7eb;
+            color: #374151;
         }
 
+        /* PAIRING BOX */
         .pairing-box {
             text-align: center;
-            background: rgba(0, 243, 255, 0.05);
-            border: 1px dashed var(--primary-cyan);
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 12px;
+            background: #eff6ff;
+            border: 1px dashed #2563eb;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
             display: none;
         }
 
         .pairing-code {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 800;
-            color: var(--primary-cyan);
-            letter-spacing: 4px;
-            margin: 8px 0;
-            text-shadow: 0 0 15px var(--primary-cyan);
+            color: #2563eb;
+            letter-spacing: 3px;
+            margin: 6px 0;
         }
 
+        /* CHAT LOGS */
         .chat-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            max-height: 280px;
+            gap: 8px;
+            max-height: 250px;
             overflow-y: auto;
         }
 
         .chat-item {
-            background: rgba(255, 255, 255, 0.02);
-            border-left: 3px solid var(--primary-cyan);
-            padding: 10px;
+            background: #f9fafb;
+            border-left: 3px solid #2563eb;
+            padding: 8px 10px;
             border-radius: 4px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
         }
 
         .chat-item.assistant {
-            border-left-color: var(--primary-purple);
-            background: rgba(188, 19, 254, 0.03);
+            border-left-color: #9333ea;
+            background: #faf5ff;
         }
 
         .chat-header {
             display: flex;
             justify-content: space-between;
-            color: var(--text-dim);
-            font-size: 0.6rem;
-            margin-bottom: 4px;
+            color: #6b7280;
+            font-size: 0.65rem;
+            margin-bottom: 2px;
         }
 
         .chat-user {
-            color: var(--primary-cyan);
+            color: #2563eb;
             font-weight: 700;
         }
 
         .chat-item.assistant .chat-user {
-            color: var(--primary-purple);
+            color: #9333ea;
         }
 
         .chat-body {
-            color: #fff;
+            color: #1f2937;
             word-break: break-word;
         }
 
@@ -298,78 +347,37 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
+            padding: 10px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
             margin-bottom: 8px;
         }
 
-        .bot-info {
-            font-size: 0.75rem;
-        }
-
         .bot-num {
-            color: var(--primary-cyan);
+            color: #111827;
             font-weight: 700;
+            font-size: 0.8rem;
         }
 
         .bot-target {
-            font-size: 0.6rem;
-            color: var(--text-dim);
-            margin-top: 2px;
-        }
-
-        nav.bottom-nav {
-            height: 60px;
-            background: rgba(10, 13, 24, 0.95);
-            border-top: 1px solid var(--border-glow);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            backdrop-filter: blur(10px);
-            z-index: 100;
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--text-dim);
-            font-size: 0.6rem;
-            gap: 4px;
-            cursor: pointer;
-            transition: all 0.3s;
-            width: 20%;
-        }
-
-        .nav-item i {
-            font-size: 1.1rem;
-        }
-
-        .nav-item.active {
-            color: var(--primary-cyan);
-            text-shadow: 0 0 10px var(--primary-cyan);
-        }
-
-        .nav-item.active i {
-            transform: translateY(-2px);
+            font-size: 0.65rem;
+            color: #6b7280;
         }
 
         .toast {
             position: fixed;
-            top: 20px;
+            top: 15px;
             left: 50%;
             transform: translateX(-50%) translateY(-100px);
-            background: rgba(16, 22, 38, 0.95);
-            border: 1px solid var(--primary-cyan);
-            color: #fff;
-            padding: 10px 20px;
+            background: #111827;
+            color: #ffffff;
+            padding: 8px 16px;
             border-radius: 20px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             z-index: 1000;
-            transition: transform 0.4s ease;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         .toast.show {
@@ -379,244 +387,244 @@
 </head>
 <body>
 
+    <!-- Header Navigation Mobile -->
     <header>
-        <h1><i class="fa-solid fa-microchip"></i> ZACK CONTROL</h1>
+        <div class="header-left">
+            <button class="burger-btn" onclick="toggleDrawer()">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <h1>Zack Control</h1>
+        </div>
         <div class="api-badge" id="apiStatusBadge">
             <div class="pulse-dot"></div>
             <span id="apiStatusText">CONNECTING...</span>
         </div>
     </header>
 
-    <div class="main-container" id="slideContainer">
-
-        <div class="slide">
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="number" id="statBotCount">0</div>
-                    <div class="label">BOT AKTIF</div>
-                </div>
-                <div class="stat-box">
-                    <div class="number" id="statLogsCount">0</div>
-                    <div class="label">LOG CHAT</div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title"><i class="fa-solid fa-vial"></i> TES RESPON AI</div>
-                <div class="form-group">
-                    <label>Pesan Tes</label>
-                    <input type="text" id="testAiMsg" class="form-control" placeholder="Contoh: Kamu lagi apa sayang?">
-                </div>
-                <div class="form-group">
-                    <label>Perlakuan User</label>
-                    <select id="testAiRole" class="form-control">
-                        <option value="true">Sebagai Zack (Pacar Manis)</option>
-                        <option value="false">Sebagai Orang Lain (Cuek)</option>
-                    </select>
-                </div>
-                <button class="btn" onclick="runTestAi()"><i class="fa-solid fa-robot"></i> Tes Respon AI</button>
-                <div id="testAiResult" style="margin-top:10px; font-size:0.75rem; color:var(--primary-cyan); display:none; background:rgba(0,0,0,0.4); padding:10px; border-radius:6px;"></div>
-            </div>
-
-            <div class="card">
-                <div class="card-title"><i class="fa-solid fa-satellite-dish"></i> LIVE MONITORING</div>
-                <div class="chat-list" id="monitoringLogs">
-                    <div style="text-align:center; font-size:0.7rem; color:var(--text-dim); padding:20px;">Memuat data...</div>
-                </div>
-            </div>
+    <!-- Side Drawer Menu -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">
+            <span>Menu Navigasi</span>
+            <button class="drawer-close" onclick="toggleDrawer()"><i class="fa-solid fa-xmark"></i></button>
         </div>
-
-        <div class="slide">
-            <div class="card">
-                <div class="card-title"><i class="fa-solid fa-qrcode"></i> GENERATE PAIRING CODE</div>
-                <div class="form-group">
-                    <label>Nomor WhatsApp Bot</label>
-                    <input type="number" id="pairNumber" class="form-control" placeholder="Contoh: 628123456789">
-                </div>
-                <button class="btn" onclick="requestPairing()"><i class="fa-solid fa-key"></i> Minta Kode</button>
-
-                <div class="pairing-box" id="pairingBox">
-                    <div style="font-size:0.65rem; color:var(--text-dim);">KODE PAIRING ANDA</div>
-                    <div class="pairing-code" id="pairingCodeVal">----</div>
-                    <div style="font-size:0.6rem; color:var(--text-dim);">Masukkan kode ini di WhatsApp HP Anda</div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title"><i class="fa-solid fa-file-zipper"></i> UPLOAD SESSION ZIP</div>
-                <div class="form-group">
-                    <label>Nomor Bot</label>
-                    <input type="number" id="zipNumber" class="form-control" placeholder="Contoh: 628123456789">
-                </div>
-                <div class="form-group">
-                    <label>File Sesi (.ZIP)</label>
-                    <input type="file" id="zipFile" accept=".zip" class="form-control">
-                </div>
-                <button class="btn" onclick="uploadZipSession()"><i class="fa-solid fa-upload"></i> Upload & Jalankan</button>
-            </div>
-        </div>
-
-        <div class="slide">
-            <div class="card">
-                <div class="card-title"><i class="fa-solid fa-robot"></i> DAFTAR BOT TERHUBUNG</div>
-                <div id="botListContainer">
-                    <div style="text-align:center; font-size:0.7rem; color:var(--text-dim); padding:15px;">Belum ada bot terhubung.</div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title"><i class="fa-solid fa-id-card"></i> UPDATE PROFIL BOT</div>
-                <div class="form-group">
-                    <label>Nomor Bot</label>
-                    <input type="number" id="profileBotNum" class="form-control" placeholder="628123456789">
-                </div>
-                <div class="form-group">
-                    <label>Nama Baru (PushName)</label>
-                    <input type="text" id="profileName" class="form-control" placeholder="Nama Bot">
-                </div>
-                <div class="form-group">
-                    <label>Bio Baru (Status)</label>
-                    <input type="text" id="profileBio" class="form-control" placeholder="Status WhatsApp">
-                </div>
-                <div class="form-group">
-                    <label>URL Foto Profil</label>
-                    <input type="url" id="profileImgUrl" class="form-control" placeholder="https://site.com/foto.jpg">
-                </div>
-                <button class="btn" onclick="updateProfile()"><i class="fa-solid fa-floppy-disk"></i> Simpan Profil</button>
-            </div>
-        </div>
-
-        <div class="slide">
-            <div class="card">
-                <div class="card-title"><i class="fa-solid fa-paper-plane"></i> KIRIM PESAN TEKS</div>
-                <div class="form-group">
-                    <label>Dari Bot (Nomor)</label>
-                    <input type="number" id="sendMsgBot" class="form-control" placeholder="628xxx">
-                </div>
-                <div class="form-group">
-                    <label>Ke Nomor / JID Target</label>
-                    <input type="text" id="sendMsgTarget" class="form-control" placeholder="628xxx">
-                </div>
-                <div class="form-group">
-                    <label>Pesan</label>
-                    <textarea id="sendMsgText" class="form-control" placeholder="Ketik pesan di sini..."></textarea>
-                </div>
-                <button class="btn" onclick="sendTextMessage()"><i class="fa-solid fa-paper-plane"></i> Kirim Pesan</button>
-            </div>
-
-            <div class="card">
-                <div class="card-title"><i class="fa-solid fa-photo-film"></i> KIRIM MEDIA</div>
-                <div class="form-group">
-                    <label>Dari Bot (Nomor)</label>
-                    <input type="number" id="mediaBot" class="form-control" placeholder="628xxx">
-                </div>
-                <div class="form-group">
-                    <label>Ke Target</label>
-                    <input type="text" id="mediaTarget" class="form-control" placeholder="628xxx">
-                </div>
-                <div class="form-group">
-                    <label>Tipe Media</label>
-                    <select id="mediaType" class="form-control">
-                        <option value="image">Gambar (Image)</option>
-                        <option value="video">Video</option>
-                        <option value="audio">Audio / Voice Note</option>
-                        <option value="document">Dokumen / File</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>URL Media</label>
-                    <input type="url" id="mediaUrl" class="form-control" placeholder="https://site.com/file.png">
-                </div>
-                <div class="form-group">
-                    <label>Caption / Description</label>
-                    <input type="text" id="mediaCaption" class="form-control" placeholder="Keterangan file...">
-                </div>
-                <button class="btn" onclick="sendMediaMessage()"><i class="fa-solid fa-file-export"></i> Kirim Media</button>
-            </div>
-        </div>
-
-        <div class="slide">
-            <div class="card">
-                <div class="card-title"><i class="fa-solid fa-brain"></i> MEMORI FAKTA ZACK</div>
-                <div class="form-group">
-                    <label>Nama Fakta (Key)</label>
-                    <input type="text" id="factKey" class="form-control" placeholder="Contoh: Makanan Favorit">
-                </div>
-                <div class="form-group">
-                    <label>Isi Fakta (Value)</label>
-                    <input type="text" id="factVal" class="form-control" placeholder="Contoh: Nasi Goreng Pedas">
-                </div>
-                <button class="btn" onclick="saveFact()"><i class="fa-solid fa-memory"></i> Simpan Memori AI</button>
-            </div>
-
-            <div class="card">
-                <div class="card-title"><i class="fa-solid fa-ban"></i> BLOCK / UNBLOCK</div>
-                <div class="form-group">
-                    <label>Dari Bot (Nomor)</label>
-                    <input type="number" id="blockBot" class="form-control" placeholder="628xxx">
-                </div>
-                <div class="form-group">
-                    <label>Target User JID / Nomor</label>
-                    <input type="text" id="blockTarget" class="form-control" placeholder="628xxx">
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn btn-danger" style="flex:1;" onclick="toggleBlock('block')"><i class="fa-solid fa-user-slash"></i> Blokir</button>
-                    <button class="btn btn-secondary" style="flex:1;" onclick="toggleBlock('unblock')"><i class="fa-solid fa-user-check"></i> Unblock</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title"><i class="fa-solid fa-comments"></i> DETAIL RIWAYAT CHAT USER</div>
-                <div class="form-group">
-                    <label>Nomor Bot</label>
-                    <input type="number" id="chatSearchBot" class="form-control" placeholder="628xxx">
-                </div>
-                <div class="form-group">
-                    <label>Nomor / JID User</label>
-                    <input type="text" id="chatSearchUser" class="form-control" placeholder="628xxx">
-                </div>
-                <button class="btn btn-secondary" onclick="fetchUserChatHistory()"><i class="fa-solid fa-magnifying-glass"></i> Cari Chat History</button>
-                <div class="chat-list" id="userChatHistoryContainer" style="margin-top:10px; max-height:200px;"></div>
-            </div>
-
-            <div class="card">
-                <div class="card-title"><i class="fa-solid fa-address-book"></i> KONTAK TERSIMPAN</div>
-                <div id="contactListContainer" style="font-size:0.7rem;">
-                    <div style="text-align:center; color:var(--text-dim); padding:10px;">Memuat kontak...</div>
-                </div>
-            </div>
-        </div>
-
+        <ul class="drawer-menu">
+            <li class="active" onclick="switchTab(0)">Dashboard & Log</li>
+            <li onclick="switchTab(1)">Pairing & Sesi</li>
+            <li onclick="switchTab(2)">Daftar Bot & Profil</li>
+            <li onclick="switchTab(3)">Kirim Pesan & Media</li>
+            <li onclick="switchTab(4)">Memori & Kontak</li>
+        </ul>
     </div>
 
-    <nav class="bottom-nav">
-        <div class="nav-item active" onclick="goToSlide(0)">
-            <i class="fa-solid fa-chart-line"></i>
-            <span>Dash</span>
+    <!-- PAGE 0: DASHBOARD -->
+    <div class="page-section active" id="sec-0">
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="number" id="statBotCount">0</div>
+                <div class="label">BOT AKTIF</div>
+            </div>
+            <div class="stat-box">
+                <div class="number" id="statLogsCount">0</div>
+                <div class="label">LOG CHAT</div>
+            </div>
         </div>
-        <div class="nav-item" onclick="goToSlide(1)">
-            <i class="fa-solid fa-qrcode"></i>
-            <span>Pair</span>
+
+        <div class="card">
+            <div class="card-title">Tes Respon AI</div>
+            <div class="form-group">
+                <label>Pesan Tes</label>
+                <input type="text" id="testAiMsg" class="form-control" placeholder="Contoh: Kamu lagi apa sayang?">
+            </div>
+            <div class="form-group">
+                <label>Perlakuan User</label>
+                <select id="testAiRole" class="form-control">
+                    <option value="true">Sebagai Zack (Pacar Manis)</option>
+                    <option value="false">Sebagai Orang Lain (Cuek)</option>
+                </select>
+            </div>
+            <button class="btn" onclick="runTestAi()">Tes Respon AI</button>
+            <div id="testAiResult" style="margin-top:10px; font-size:0.75rem; color:#2563eb; display:none; background:#f0f7ff; padding:10px; border-radius:6px; border:1px solid #bfdbfe;"></div>
         </div>
-        <div class="nav-item" onclick="goToSlide(2)">
-            <i class="fa-solid fa-robot"></i>
-            <span>Bots</span>
+
+        <div class="card">
+            <div class="card-title">Live Monitoring Chat</div>
+            <div class="chat-list" id="monitoringLogs">
+                <div style="text-align:center; font-size:0.75rem; color:#6b7280; padding:15px;">Memuat data...</div>
+            </div>
         </div>
-        <div class="nav-item" onclick="goToSlide(3)">
-            <i class="fa-solid fa-paper-plane"></i>
-            <span>Kirim</span>
+    </div>
+
+    <!-- PAGE 1: PAIRING & ZIP -->
+    <div class="page-section" id="sec-1">
+        <div class="card">
+            <div class="card-title">Generate Pairing Code</div>
+            <div class="form-group">
+                <label>Nomor WhatsApp Bot</label>
+                <input type="number" id="pairNumber" class="form-control" placeholder="Contoh: 628123456789">
+            </div>
+            <button class="btn" onclick="requestPairing()">Minta Kode Pairing</button>
+
+            <div class="pairing-box" id="pairingBox">
+                <div style="font-size:0.65rem; color:#6b7280;">KODE PAIRING ANDA</div>
+                <div class="pairing-code" id="pairingCodeVal">----</div>
+                <div style="font-size:0.65rem; color:#6b7280;">Masukkan kode ini di WhatsApp HP Anda</div>
+            </div>
         </div>
-        <div class="nav-item" onclick="goToSlide(4)">
-            <i class="fa-solid fa-brain"></i>
-            <span>Memori</span>
+
+        <div class="card">
+            <div class="card-title">Upload Session (.ZIP)</div>
+            <div class="form-group">
+                <label>Nomor Bot</label>
+                <input type="number" id="zipNumber" class="form-control" placeholder="Contoh: 628123456789">
+            </div>
+            <div class="form-group">
+                <label>File Sesi (.ZIP)</label>
+                <input type="file" id="zipFile" accept=".zip" class="form-control">
+            </div>
+            <button class="btn" onclick="uploadZipSession()">Upload & Jalankan</button>
         </div>
-    </nav>
+    </div>
+
+    <!-- PAGE 2: BOTS & PROFILE -->
+    <div class="page-section" id="sec-2">
+        <div class="card">
+            <div class="card-title">Daftar Bot Terhubung</div>
+            <div id="botListContainer">
+                <div style="text-align:center; font-size:0.75rem; color:#6b7280; padding:15px;">Belum ada bot terhubung.</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Update Profil Bot</div>
+            <div class="form-group">
+                <label>Nomor Bot</label>
+                <input type="number" id="profileBotNum" class="form-control" placeholder="628123456789">
+            </div>
+            <div class="form-group">
+                <label>Nama Baru (PushName)</label>
+                <input type="text" id="profileName" class="form-control" placeholder="Nama Bot">
+            </div>
+            <div class="form-group">
+                <label>Bio Baru (Status)</label>
+                <input type="text" id="profileBio" class="form-control" placeholder="Status WhatsApp">
+            </div>
+            <div class="form-group">
+                <label>URL Foto Profil</label>
+                <input type="url" id="profileImgUrl" class="form-control" placeholder="https://site.com/foto.jpg">
+            </div>
+            <button class="btn" onclick="updateProfile()">Simpan Profil</button>
+        </div>
+    </div>
+
+    <!-- PAGE 3: SEND MESSAGE & MEDIA -->
+    <div class="page-section" id="sec-3">
+        <div class="card">
+            <div class="card-title">Kirim Pesan Teks</div>
+            <div class="form-group">
+                <label>Dari Bot (Nomor)</label>
+                <input type="number" id="sendMsgBot" class="form-control" placeholder="628xxx">
+            </div>
+            <div class="form-group">
+                <label>Ke Nomor / JID Target</label>
+                <input type="text" id="sendMsgTarget" class="form-control" placeholder="628xxx">
+            </div>
+            <div class="form-group">
+                <label>Pesan</label>
+                <textarea id="sendMsgText" class="form-control" placeholder="Ketik pesan di sini..."></textarea>
+            </div>
+            <button class="btn" onclick="sendTextMessage()">Kirim Pesan</button>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Kirim Media</div>
+            <div class="form-group">
+                <label>Dari Bot (Nomor)</label>
+                <input type="number" id="mediaBot" class="form-control" placeholder="628xxx">
+            </div>
+            <div class="form-group">
+                <label>Ke Target</label>
+                <input type="text" id="mediaTarget" class="form-control" placeholder="628xxx">
+            </div>
+            <div class="form-group">
+                <label>Tipe Media</label>
+                <select id="mediaType" class="form-control">
+                    <option value="image">Gambar (Image)</option>
+                    <option value="video">Video</option>
+                    <option value="audio">Audio / Voice Note</option>
+                    <option value="document">Dokumen / File</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>URL Media</label>
+                <input type="url" id="mediaUrl" class="form-control" placeholder="https://site.com/file.png">
+            </div>
+            <div class="form-group">
+                <label>Caption / Keterangan</label>
+                <input type="text" id="mediaCaption" class="form-control" placeholder="Keterangan file...">
+            </div>
+            <button class="btn" onclick="sendMediaMessage()">Kirim Media</button>
+        </div>
+    </div>
+
+    <!-- PAGE 4: MEMORY & CONTACTS -->
+    <div class="page-section" id="sec-4">
+        <div class="card">
+            <div class="card-title">Memori Fakta Zack</div>
+            <div class="form-group">
+                <label>Nama Fakta (Key)</label>
+                <input type="text" id="factKey" class="form-control" placeholder="Contoh: Makanan Favorit">
+            </div>
+            <div class="form-group">
+                <label>Isi Fakta (Value)</label>
+                <input type="text" id="factVal" class="form-control" placeholder="Contoh: Nasi Goreng Pedas">
+            </div>
+            <button class="btn" onclick="saveFact()">Simpan Memori AI</button>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Block / Unblock User</div>
+            <div class="form-group">
+                <label>Dari Bot (Nomor)</label>
+                <input type="number" id="blockBot" class="form-control" placeholder="628xxx">
+            </div>
+            <div class="form-group">
+                <label>Target User JID / Nomor</label>
+                <input type="text" id="blockTarget" class="form-control" placeholder="628xxx">
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-danger" style="flex:1;" onclick="toggleBlock('block')">Blokir</button>
+                <button class="btn btn-secondary" style="flex:1;" onclick="toggleBlock('unblock')">Unblock</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Riwayat Chat User</div>
+            <div class="form-group">
+                <label>Nomor Bot</label>
+                <input type="number" id="chatSearchBot" class="form-control" placeholder="628xxx">
+            </div>
+            <div class="form-group">
+                <label>Nomor / JID User</label>
+                <input type="text" id="chatSearchUser" class="form-control" placeholder="628xxx">
+            </div>
+            <button class="btn btn-secondary" onclick="fetchUserChatHistory()">Cari History Chat</button>
+            <div class="chat-list" id="userChatHistoryContainer" style="margin-top:10px; max-height:200px;"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Kontak Tersimpan</div>
+            <div id="contactListContainer" style="font-size:0.75rem;">
+                <div style="text-align:center; color:#6b7280; padding:10px;">Memuat kontak...</div>
+            </div>
+        </div>
+    </div>
 
     <div class="toast" id="toast">Notifikasi Sistem</div>
 
     <script>
         const API_BASE = window.location.origin;
-        let currentSlide = 0;
+        let currentTab = 0;
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -625,15 +633,29 @@
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        function goToSlide(index) {
-            currentSlide = index;
-            document.getElementById('slideContainer').style.transform = `translateX(-${index * 20}%)`;
+        function toggleDrawer() {
+            document.getElementById('drawer').classList.toggle('active');
+            document.getElementById('drawerOverlay').classList.toggle('active');
+        }
+
+        function switchTab(index) {
+            currentTab = index;
             
-            const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach((item, i) => {
+            // Switch Menu list
+            const menuItems = document.querySelectorAll('.drawer-menu li');
+            menuItems.forEach((item, i) => {
                 if (i === index) item.classList.add('active');
                 else item.classList.remove('active');
             });
+
+            // Switch Sections
+            const sections = document.querySelectorAll('.page-section');
+            sections.forEach((sec, i) => {
+                if (i === index) sec.classList.add('active');
+                else sec.classList.remove('active');
+            });
+
+            toggleDrawer(); // tutup drawer setelah dipilihh
 
             if (index === 0) fetchMonitoring();
             if (index === 2) fetchBots();
@@ -684,7 +706,7 @@
 
                     const container = document.getElementById('monitoringLogs');
                     if (!data.recentChatLogs || data.recentChatLogs.length === 0) {
-                        container.innerHTML = '<div style="text-align:center; font-size:0.7rem; color:var(--text-dim); padding:20px;">Belum ada log pesan.</div>';
+                        container.innerHTML = '<div style="text-align:center; font-size:0.75rem; color:#6b7280; padding:15px;">Belum ada log pesan.</div>';
                         return;
                     }
 
@@ -756,17 +778,17 @@
                 if (data.status && data.bots.length > 0) {
                     container.innerHTML = data.bots.map(bot => `
                         <div class="bot-card">
-                            <div class="bot-info">
+                            <div>
                                 <div class="bot-num">${bot.number}</div>
                                 <div class="bot-target">Target: ${bot.targetJid} | Status: ${bot.status}</div>
                             </div>
-                            <button class="btn btn-danger" style="padding:6px 12px; font-size:0.6rem;" onclick="deleteBot('${bot.number}')">
+                            <button class="btn btn-danger" style="width:auto; padding:6px 12px;" onclick="deleteBot('${bot.number}')">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
                     `).join('');
                 } else {
-                    container.innerHTML = '<div style="text-align:center; font-size:0.7rem; color:var(--text-dim); padding:15px;">Belum ada bot terhubung.</div>';
+                    container.innerHTML = '<div style="text-align:center; font-size:0.75rem; color:#6b7280; padding:15px;">Belum ada bot terhubung.</div>';
                 }
             } catch (e) {
                 showToast('Gagal memuat list bot');
@@ -896,17 +918,17 @@
 
                 if (data.status && data.contacts.length > 0) {
                     container.innerHTML = data.contacts.map(c => `
-                        <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f3f4f6;">
                             <div>
-                                <span style="color:var(--primary-cyan); font-weight:700;">${c.pushName}</span> 
-                                ${c.isZack ? '<span style="color:var(--primary-purple); font-size:0.6rem;">[Zack ❤️]</span>' : ''}
-                                <div style="color:var(--text-dim); font-size:0.6rem;">${c.number}</div>
+                                <span style="color:#111827; font-weight:700;">${c.pushName}</span> 
+                                ${c.isZack ? '<span style="color:#9333ea; font-size:0.65rem;">[Zack ❤️]</span>' : ''}
+                                <div style="color:#6b7280; font-size:0.65rem;">${c.number}</div>
                             </div>
-                            <div style="font-size:0.55rem; color:var(--text-dim);">${new Date(c.lastSeen).toLocaleDateString()}</div>
+                            <div style="font-size:0.6rem; color:#9ca3af;">${new Date(c.lastSeen).toLocaleDateString()}</div>
                         </div>
                     `).join('');
                 } else {
-                    container.innerHTML = '<div style="text-align:center; color:var(--text-dim); padding:10px;">Belum ada kontak tersimpan.</div>';
+                    container.innerHTML = '<div style="text-align:center; color:#6b7280; padding:10px;">Belum ada kontak tersimpan.</div>';
                 }
             } catch (e) {
                 showToast('Gagal memuat kontak');
@@ -920,7 +942,7 @@
 
             if (!botNum || !userNum) return showToast('Isi nomor bot dan nomor user!');
 
-            container.innerHTML = '<div style="text-align:center; color:var(--text-dim); padding:10px;">Mencari riwayat...</div>';
+            container.innerHTML = '<div style="text-align:center; color:#6b7280; padding:10px;">Mencari riwayat...</div>';
 
             try {
                 const res = await fetch(`${API_BASE}/api/chats?botNumber=${botNum}&userJid=${userNum}`);
@@ -937,7 +959,7 @@
                         </div>
                     `).join('');
                 } else {
-                    container.innerHTML = '<div style="text-align:center; color:var(--text-dim); padding:10px;">Tidak ada riwayat chat ditemukan.</div>';
+                    container.innerHTML = '<div style="text-align:center; color:#6b7280; padding:10px;">Tidak ada riwayat chat ditemukan.</div>';
                 }
             } catch (e) {
                 showToast('Gagal mencari riwayat chat');
@@ -948,7 +970,7 @@
         fetchMonitoring();
         setInterval(() => {
             checkAPIStatus();
-            if (currentSlide === 0) fetchMonitoring();
+            if (currentTab === 0) fetchMonitoring();
         }, 5000);
     </script>
 </body>
