@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Zack Bot Control Center</title>
 
-    <!-- Google Font Orbitron -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;800&display=swap" rel="stylesheet">
-
-    <!-- FontAwesome Icon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
@@ -44,7 +41,6 @@
                 radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.08) 0%, transparent 40%);
         }
 
-        /* Header */
         header {
             padding: 15px 20px;
             background: rgba(10, 13, 24, 0.9);
@@ -100,7 +96,6 @@
             100% { opacity: 0.4; }
         }
 
-        /* Main Slide Container */
         .main-container {
             flex: 1;
             display: flex;
@@ -117,7 +112,6 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        /* Card Component */
         .card {
             background: var(--card-bg);
             border: 1px solid var(--border-glow);
@@ -139,7 +133,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Grid Stats */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -168,7 +161,6 @@
             margin-top: 4px;
         }
 
-        /* Form Controls */
         .form-group {
             margin-bottom: 12px;
         }
@@ -203,7 +195,6 @@
             height: 70px;
         }
 
-        /* Buttons */
         .btn {
             width: 100%;
             background: linear-gradient(135deg, var(--primary-cyan), var(--primary-purple));
@@ -241,7 +232,6 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        /* Pairing Code Display */
         .pairing-box {
             text-align: center;
             background: rgba(0, 243, 255, 0.05);
@@ -261,7 +251,6 @@
             text-shadow: 0 0 15px var(--primary-cyan);
         }
 
-        /* Chat Monitoring List */
         .chat-list {
             display: flex;
             flex-direction: column;
@@ -305,7 +294,6 @@
             word-break: break-word;
         }
 
-        /* Bot Badge List */
         .bot-card {
             display: flex;
             justify-content: space-between;
@@ -332,7 +320,6 @@
             margin-top: 2px;
         }
 
-        /* Bottom Navigation Bar */
         nav.bottom-nav {
             height: 60px;
             background: rgba(10, 13, 24, 0.95);
@@ -369,7 +356,6 @@
             transform: translateY(-2px);
         }
 
-        /* Toast Popup */
         .toast {
             position: fixed;
             top: 20px;
@@ -393,7 +379,6 @@
 </head>
 <body>
 
-    <!-- Header -->
     <header>
         <h1><i class="fa-solid fa-microchip"></i> ZACK CONTROL</h1>
         <div class="api-badge" id="apiStatusBadge">
@@ -402,10 +387,8 @@
         </div>
     </header>
 
-    <!-- Slide Container -->
     <div class="main-container" id="slideContainer">
 
-        <!-- SLIDE 1: DASHBOARD -->
         <div class="slide">
             <div class="stats-grid">
                 <div class="stat-box">
@@ -419,6 +402,23 @@
             </div>
 
             <div class="card">
+                <div class="card-title"><i class="fa-solid fa-vial"></i> TES RESPON AI</div>
+                <div class="form-group">
+                    <label>Pesan Tes</label>
+                    <input type="text" id="testAiMsg" class="form-control" placeholder="Contoh: Kamu lagi apa sayang?">
+                </div>
+                <div class="form-group">
+                    <label>Perlakuan User</label>
+                    <select id="testAiRole" class="form-control">
+                        <option value="true">Sebagai Zack (Pacar Manis)</option>
+                        <option value="false">Sebagai Orang Lain (Cuek)</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="runTestAi()"><i class="fa-solid fa-robot"></i> Tes Respon AI</button>
+                <div id="testAiResult" style="margin-top:10px; font-size:0.75rem; color:var(--primary-cyan); display:none; background:rgba(0,0,0,0.4); padding:10px; border-radius:6px;"></div>
+            </div>
+
+            <div class="card">
                 <div class="card-title"><i class="fa-solid fa-satellite-dish"></i> LIVE MONITORING</div>
                 <div class="chat-list" id="monitoringLogs">
                     <div style="text-align:center; font-size:0.7rem; color:var(--text-dim); padding:20px;">Memuat data...</div>
@@ -426,7 +426,6 @@
             </div>
         </div>
 
-        <!-- SLIDE 2: PAIRING & ZIP -->
         <div class="slide">
             <div class="card">
                 <div class="card-title"><i class="fa-solid fa-qrcode"></i> GENERATE PAIRING CODE</div>
@@ -457,7 +456,6 @@
             </div>
         </div>
 
-        <!-- SLIDE 3: BOT MANAGEMENT -->
         <div class="slide">
             <div class="card">
                 <div class="card-title"><i class="fa-solid fa-robot"></i> DAFTAR BOT TERHUBUNG</div>
@@ -488,7 +486,6 @@
             </div>
         </div>
 
-        <!-- SLIDE 4: SEND MESSAGE & MEDIA -->
         <div class="slide">
             <div class="card">
                 <div class="card-title"><i class="fa-solid fa-paper-plane"></i> KIRIM PESAN TEKS</div>
@@ -538,7 +535,6 @@
             </div>
         </div>
 
-        <!-- SLIDE 5: MEMORY & TOOLS -->
         <div class="slide">
             <div class="card">
                 <div class="card-title"><i class="fa-solid fa-brain"></i> MEMORI FAKTA ZACK</div>
@@ -570,6 +566,20 @@
             </div>
 
             <div class="card">
+                <div class="card-title"><i class="fa-solid fa-comments"></i> DETAIL RIWAYAT CHAT USER</div>
+                <div class="form-group">
+                    <label>Nomor Bot</label>
+                    <input type="number" id="chatSearchBot" class="form-control" placeholder="628xxx">
+                </div>
+                <div class="form-group">
+                    <label>Nomor / JID User</label>
+                    <input type="text" id="chatSearchUser" class="form-control" placeholder="628xxx">
+                </div>
+                <button class="btn btn-secondary" onclick="fetchUserChatHistory()"><i class="fa-solid fa-magnifying-glass"></i> Cari Chat History</button>
+                <div class="chat-list" id="userChatHistoryContainer" style="margin-top:10px; max-height:200px;"></div>
+            </div>
+
+            <div class="card">
                 <div class="card-title"><i class="fa-solid fa-address-book"></i> KONTAK TERSIMPAN</div>
                 <div id="contactListContainer" style="font-size:0.7rem;">
                     <div style="text-align:center; color:var(--text-dim); padding:10px;">Memuat kontak...</div>
@@ -579,7 +589,6 @@
 
     </div>
 
-    <!-- Bottom Navigation -->
     <nav class="bottom-nav">
         <div class="nav-item active" onclick="goToSlide(0)">
             <i class="fa-solid fa-chart-line"></i>
@@ -603,11 +612,10 @@
         </div>
     </nav>
 
-    <!-- Toast Notification -->
     <div class="toast" id="toast">Notifikasi Sistem</div>
 
     <script>
-        const API_BASE = 'https://botzack.up.railway.app';
+        const API_BASE = window.location.origin;
         let currentSlide = 0;
 
         function showToast(msg) {
@@ -642,6 +650,27 @@
             } catch (e) {
                 document.getElementById('apiStatusBadge').classList.add('offline');
                 document.getElementById('apiStatusText').innerText = 'OFFLINE';
+            }
+        }
+
+        async function runTestAi() {
+            const message = document.getElementById('testAiMsg').value || 'Halo sayang';
+            const isZack = document.getElementById('testAiRole').value === 'true';
+            const resBox = document.getElementById('testAiResult');
+
+            resBox.style.display = 'block';
+            resBox.innerText = 'Memproses respon AI...';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/test-ai?message=${encodeURIComponent(message)}&isZack=${isZack}`);
+                const data = await res.json();
+                if (data.status) {
+                    resBox.innerText = `[AI Respon]: ${data.aiResponse}`;
+                } else {
+                    resBox.innerText = `[Gagal]: ${data.error || 'Terjadi kesalahan'}`;
+                }
+            } catch (e) {
+                resBox.innerText = '[Error]: Gagal menghubungi API server.';
             }
         }
 
@@ -884,7 +913,37 @@
             }
         }
 
-        // Auto Refresh Dashboard
+        async function fetchUserChatHistory() {
+            const botNum = document.getElementById('chatSearchBot').value;
+            const userNum = document.getElementById('chatSearchUser').value;
+            const container = document.getElementById('userChatHistoryContainer');
+
+            if (!botNum || !userNum) return showToast('Isi nomor bot dan nomor user!');
+
+            container.innerHTML = '<div style="text-align:center; color:var(--text-dim); padding:10px;">Mencari riwayat...</div>';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/chats?botNumber=${botNum}&userJid=${userNum}`);
+                const data = await res.json();
+
+                if (data.status && data.chats.length > 0) {
+                    container.innerHTML = data.chats.map(chat => `
+                        <div class="chat-item ${chat.role}">
+                            <div class="chat-header">
+                                <span class="chat-user">${chat.userName}</span>
+                                <span>${new Date(chat.timestamp).toLocaleTimeString()}</span>
+                            </div>
+                            <div class="chat-body">${chat.content}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="text-align:center; color:var(--text-dim); padding:10px;">Tidak ada riwayat chat ditemukan.</div>';
+                }
+            } catch (e) {
+                showToast('Gagal mencari riwayat chat');
+            }
+        }
+
         checkAPIStatus();
         fetchMonitoring();
         setInterval(() => {
