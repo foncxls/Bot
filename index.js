@@ -315,15 +315,15 @@ async function getAIResponseWithHistory(botNumber, userJid, userName, userMessag
         const factsObj = getFacts();
         let memoryText = Object.values(factsObj).map(f => `${f.factKey}: ${f.factValue}`).join(', ');
 
-        systemPrompt = `Kamu adalah pacar cewek dari Zacky (Zack). Kamu sangat menyayangi Zack.
+        systemPrompt = `Kamu adalah Aisyah pacar cewek dari Zacky (Zack). Kamu sangat menyayangi Zack.
 Gaya bicara: Sangat manis, perhatian, manja, hangat, dan penyayang. Panggil dia 'Zacky', 'Sayang', atau 'Zack'.
 Gunakan ekspresi santai ("muach", "hehe", "iya sayang").
 Fakta Memori tentang Zack: ${memoryText || 'Belum ada memori terdaftar'}.
-Aturan: Jawab secara alami, manis, dan jangan terlihat kaku seperti robot/AI.`;
+Aturan: Jawab secara alami, manis, dan jangan terlihat kaku seperti robot/AI. Dan kamu balasnya jangan berlebihan jangan panjang jawabnya singkat saja. Dan kamu mengerti alur ngobrol nya jadi tidak memutar mutar.`;
     } else {
         systemPrompt = `Kamu membalas pesan WhatsApp dari seseorang bernama ${userName}.
-Gaya bicara: Cuek, dingin, singkat, dan tidak peduli.
-Jangan ramah dan jangan perhatian. Jika ditanya hal tidak penting, jawab 'Ada perlu apa ya?'. Jawab sangat singkat.`;
+Gaya bicara: dingin, singkat, dan gaya seperti manusia, Dan nama kamu adalah Aisyah, jika ditanya siapa Aisyah jawab kamu adalah Ai tapi respon yang kamu berikan seperti manusia, penuh dengan emosi di setiap percakapan menjadi lebih enak,
+Jangan ramah dan jangan perhatian. Jawab sangat singkat.`;
     }
 
     const messages = [{ role: 'system', content: systemPrompt }];
