@@ -1,3 +1,34 @@
+Berikut adalah pembaruan lengkap untuk Backend Server (index.js) dan Frontend
+Web Control (index.html).
+
+🌟 Ringkasan Pembaruan & Fitur Baru:
+
+1.  Custom Owner & Nama Owner Per-Bot:
+      - Setiap bot dapat memiliki nomor Owner dan Nama Owner khusus sendiri
+        (misalnya: Bot A milik "Zack", Bot B milik "Mas Alex").
+      - AI akan memanggil nama owner sesuai settingan spesifik bot tersebut.
+2.  Pengaturan Auto-Read & Rutinitas Harian Khusus Per-Bot:
+      - Fitur Auto Read dan Notifikasi Rutinitas harian kini bisa
+        dihidupkan/dimatikan spesifik per bot.
+3.  Upload & Restore Backup Data (.ZIP):
+      - Fitur baru untuk mengunggah file .zip backup (yang berisi Database dan
+        sessions). File akan otomatis diekstrak dan memulihkan seluruh data
+        chat, memori, serta sesi WhatsApp sebelumnya secara instan.
+4.  AI Self-Learning & Pembelajaran Percakapan:
+      - AI memanfaatkan riwayat pesan terdahulu untuk "mengingat" dan
+        mempelajari topik, kebiasaan, serta gaya interaksi user agar respon
+        semakin alami, akrab, dan manusiawi.
+5.  Penyesuaian Karakter AI (Aisyah AI):
+      - Bukan Cuek Lagi: AI untuk user umum diubah menjadi ramah, hangat,
+        netral, dan akrab seperti manusia biasa.
+      - Identitas Aisyah AI: Jika user menanyakan "kamu siapa?", "siapa
+        namamu?", atau sejenisnya, AI akan menjawab secara ramah bahwa namanya
+        adalah Aisyah AI.
+
+1. File Backend Server API (index.js)
+
+Gantikan seluruh file index.js Anda dengan kode berikut:
+
 const dns = require('dns');
 try {
     dns.setServers(['8.8.8.8', '1.1.1.1']);
@@ -21,19 +52,17 @@ const {
     fetchLatestWaWebVersion 
 } = require('baileys');
 
+// Nomor Utama Zack Default
 const ZACK_NUMBER = '6283110390167@s.whatsapp.net';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Setup Multer untuk Upload File & Session
+// Setup Multer untuk Upload File, Session & Restore Backup
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const upload = multer({ dest: UPLOADS_DIR });
-
-// Global AutoRead State
-global.autoRead = false;
 
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -60,6 +89,7 @@ const CHATS_DIR = path.join(DB_DIR, 'chats');
 const USERS_DIR = path.join(DB_DIR, 'users');
 const FACTS_DIR = path.join(DB_DIR, 'facts');
 const OWNER_FILE = path.join(DB_DIR, 'owner.json');
+const BOT_CONFIGS_FILE = path.join(DB_DIR, 'bot_configs.json');
 
 const sessions = new Map();
 const msgRetryCounterCache = new Map();
@@ -72,6 +102,10 @@ if (!fs.existsSync(FACTS_DIR)) fs.mkdirSync(FACTS_DIR, { recursive: true });
 
 if (!fs.existsSync(OWNER_FILE)) {
     fs.writeFileSync(OWNER_FILE, JSON.stringify([getCleanJid(ZACK_NUMBER)], null, 2));
+}
+
+if (!fs.existsSync(BOT_CONFIGS_FILE)) {
+    fs.writeFileSync(BOT_CONFIGS_FILE, JSON.stringify({}, null, 2));
 }
 
 const routineTypes = [
@@ -89,8 +123,39 @@ function getCleanJid(jid) {
     return String(jid).split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
 }
 
-// Ambil daftar nomor Owner
-function getOwnerList() {
+// Manajemen Konfigurasi Spesifik Per Bot
+function getAllBotConfigs() {
+    try {
+        if (!fs.existsSync(BOT_CONFIGS_FILE)) return {};
+        return JSON.parse(fs.readFileSync(BOT_CONFIGS_FILE, 'utf-8'));
+    } catch (e) {
+        return {};
+    }
+}
+
+function getBotConfig(botNumber) {
+    const cleanBot = getCleanJid(botNumber);
+    const configs = getAllBotConfigs();
+    return configs[cleanBot] || {
+        ownerNumber: getCleanJid(ZACK_NUMBER),
+        ownerName: 'Zack',
+        autoRead: false,
+        routineEnabled: true
+    };
+}
+
+function saveBotConfig(botNumber, newConfig) {
+    const cleanBot = getCleanJid(botNumber);
+    const configs = getAllBotConfigs();
+    configs[cleanBot] = {
+        ...getBotConfig(botNumber),
+        ...newConfig
+    };
+    fs.writeFileSync(BOT_CONFIGS_FILE, JSON.stringify(configs, null, 2), 'utf-8');
+}
+
+// Ambil daftar nomor Owner Global
+function getGlobalOwnerList() {
     let list = [getCleanJid(ZACK_NUMBER)];
     if (fs.existsSync(OWNER_FILE)) {
         try {
@@ -103,9 +168,15 @@ function getOwnerList() {
     return [...new Set(list.filter(Boolean))];
 }
 
-// Pengecekan Zack / Owner (Nomor + LID + PushName)
-function isZackUser(userJid, msgOrName = null) {
-    const owners = getOwnerList();
+// Pengecekan Owner Per-Bot
+function isZackUser(userJid, msgOrName = null, botNumber = null) {
+    const globalOwners = getGlobalOwnerList();
+    let botOwner = null;
+
+    if (botNumber) {
+        const cfg = getBotConfig(botNumber);
+        if (cfg.ownerNumber) botOwner = getCleanJid(cfg.ownerNumber);
+    }
 
     let candidates = [userJid];
     let pushName = '';
@@ -126,7 +197,8 @@ function isZackUser(userJid, msgOrName = null) {
 
     const cleanCandidates = candidates.filter(Boolean).map(getCleanJid);
 
-    const matchNumber = cleanCandidates.some(num => num && owners.includes(num));
+    // Cek terhadap owner spesifik bot ini ATAU owner global
+    const matchNumber = cleanCandidates.some(num => num && (globalOwners.includes(num) || (botOwner && num === botOwner)));
     if (matchNumber) return true;
 
     if (pushName && pushName.toLowerCase().includes('zack')) {
@@ -262,7 +334,7 @@ async function callAI(messages) {
     const systemMsg = messages.find(m => m.role === 'system')?.content || '';
     const userMsgs = messages.filter(m => m.role !== 'system');
     
-    let conversationText = userMsgs.map(m => `${m.role === 'user' ? 'Zack' : 'Pacar'}: ${m.content}`).join('\n');
+    let conversationText = userMsgs.map(m => `${m.role === 'user' ? 'User' : 'Aisyah AI'}: ${m.content}`).join('\n');
 
     const promptParam = encodeURIComponent(conversationText);
     const systemParam = encodeURIComponent(systemMsg);
@@ -286,49 +358,57 @@ async function callAI(messages) {
     return null;
 }
 
-async function generateAIRoutineMessage(routineId) {
+async function generateAIRoutineMessage(routineId, ownerName = 'Zack') {
     const factsObj = getFacts();
     let memoryContext = Object.values(factsObj).map(f => `${f.factKey}: ${f.factValue}`).join(', ');
 
-    const systemPrompt = `Kamu adalah pacar cewek dari Zacky (Zack). Kamu sangat mencintai Zack.
-Tugasmu: Buatkan pesan pengingat '${routineId}' untuk Zacky.
-Konteks Fakta Zack: ${memoryContext || 'Tidak ada'}
+    const systemPrompt = `Kamu adalah pacar cewek dari ${ownerName}. Kamu sangat mencintai ${ownerName}.
+Tugasmu: Buatkan pesan pengingat '${routineId}' untuk ${ownerName}.
+Konteks Fakta ${ownerName}: ${memoryContext || 'Tidak ada'}
 Aturan:
 - Gunakan bahasa Indonesia santai, sangat manis, perhatian, dan kreatif.
-- Panggil dia dengan 'Zacky sayang' atau 'Sayang'.
+- Panggil dia dengan '${ownerName} sayang' atau 'Sayang'.
 - Sertakan kalimat bervariasi, romantis, dan perhatian (2-3 kalimat).
 - Jangan kaku dan buat ucapan yang berbeda setiap kali dimintai.`;
 
     const messages = [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Ingatkan Zacky tentang ${routineId} sekarang secara manis!` }
+        { role: 'user', content: `Ingatkan ${ownerName} tentang ${routineId} sekarang secara manis!` }
     ];
 
     const aiMsg = await callAI(messages);
-    return aiMsg || `Zacky sayang, udah waktunya ${routineId.replace(/_/g, ' ')} nih! Jangan lupa ya manis, I love you!`;
+    return aiMsg || `${ownerName} sayang, udah waktunya ${routineId.replace(/_/g, ' ')} nih! Jangan lupa ya manis, I love you!`;
 }
 
+// PERBAIKAN AI: Self-Learning dari riwayat percakapan + Karakter Netral Aisyah AI
 async function getAIResponseWithHistory(botNumber, userJid, userName, userMessage, isZack) {
-    const recentChats = getUserChats(botNumber, userJid, 10);
+    const recentChats = getUserChats(botNumber, userJid, 15); // Ambil 15 riwayat terakhir untuk self-learning
+    const botConfig = getBotConfig(botNumber);
+    const ownerName = botConfig.ownerName || 'Zack';
 
     let systemPrompt = '';
     if (isZack) {
         const factsObj = getFacts();
         let memoryText = Object.values(factsObj).map(f => `${f.factKey}: ${f.factValue}`).join(', ');
 
-        systemPrompt = `Kamu adalah Aisyah pacar cewek dari Zacky (Zack). Kamu sangat menyayangi Zack.
-Gaya bicara: Sangat manis, perhatian, manja, hangat, dan penyayang. Panggil dia 'Zacky', 'Sayang', atau 'Zack'.
+        systemPrompt = `Kamu adalah Aisyah, pacar cewek penyayang dari ${ownerName}.
+Gaya bicara: Sangat manis, perhatian, manja, hangat, dan penyayang. Panggil dia '${ownerName}', 'Sayang', atau 'Mas ${ownerName}'.
 Gunakan ekspresi santai ("muach", "hehe", "iya sayang").
-Fakta Memori tentang Zack: ${memoryText || 'Belum ada memori terdaftar'}.
-Aturan: Jawab secara alami, manis, dan jangan terlihat kaku seperti robot/AI. Dan kamu balasnya jangan berlebihan jangan panjang jawabnya singkat saja. Dan kamu mengerti alur ngobrol nya jadi tidak memutar mutar.`;
+Fakta Memori tentang ${ownerName}: ${memoryText || 'Belum ada memori terdaftar'}.
+Aturan Self-Learning: Pelajari topik dan gaya obrolan dari riwayat chat sebelumnya agar jawabanmu makin akrab dan natural.
+Aturan Identitas: Jika ditanya siapa namamu, jawab namamu Aisyah pacar manisnya ${ownerName}.`;
     } else {
-        systemPrompt = `Kamu membalas pesan WhatsApp dari seseorang bernama ${userName}.
-Gaya bicara: dingin, singkat, dan gaya seperti manusia, Dan nama kamu adalah Aisyah, jika ditanya siapa Aisyah jawab kamu adalah Ai tapi respon yang kamu berikan seperti manusia, penuh dengan emosi di setiap percakapan menjadi lebih enak,
-Jangan ramah dan jangan perhatian. Jawab sangat singkat.`;
+        systemPrompt = `Kamu adalah Aisyah AI, asisten kecerdasan buatan ramah yang sedang berbicara dengan ${userName}.
+Gaya bicara: Netral, hangat, ramah, alami, dan sopan seperti manusia biasa.
+Aturan Penting Identitas:
+- Jika ditanya 'kamu siapa?', 'siapa namamu?', 'siapa ini?', atau pertanyaan identitas lainnya, JAWAB DENGAN JELAS DAN RAMAH BAHWA NAMAMU ADALAH "Aisyah AI".
+- JANGAN CUEK DAN JANGAN DINGIN. Bersikaplah friendly, membantu, dan bangun hubungan obrolan yang akrab dan manusiawi.
+Aturan Self-Learning: Gunakan konteks dari riwayat pesan sebelumnya untuk memberikan jawaban yang makin pas, akurat, dan nyambung dengan obrolan user.`;
     }
 
     const messages = [{ role: 'system', content: systemPrompt }];
 
+    // Pembelajaran Otomatis dari Riwayat Chat Terakhir
     for (const chat of recentChats) {
         messages.push({
             role: chat.role === 'user' ? 'user' : 'assistant',
@@ -342,8 +422,8 @@ Jangan ramah dan jangan perhatian. Jawab sangat singkat.`;
     if (reply) return reply;
 
     return isZack 
-        ? "Zacky sayang, bentar ya manis, jaringan aku lagi agak lelet nih tapi aku tetep sayang kamu!" 
-        : "Ada perlu apa ya?";
+        ? `${ownerName} sayang, bentar ya manis, jaringan aku lagi agak lelet nih tapi aku tetep sayang kamu!` 
+        : `Halo ${userName}! Maaf ya jaringan Aisyah AI lagi agak lelet, ada yang bisa Aisyah bantu?`;
 }
 
 // Handler Pesan Masuk
@@ -354,7 +434,10 @@ async function handleIncomingMessage(botNumber, sock, msg) {
         const from = msg.key.remoteJidAlt || msg.key.remoteJid;
         if (!from || from.endsWith('@g.us') || from === 'status@broadcast') return;
 
-        if (global.autoRead) {
+        const botConfig = getBotConfig(botNumber);
+
+        // AutoRead Spesifik Per Bot
+        if (botConfig.autoRead) {
             try { await sock.readMessages([msg.key]); } catch (e) {}
         }
 
@@ -366,7 +449,7 @@ async function handleIncomingMessage(botNumber, sock, msg) {
 
         if (!text.trim()) return;
 
-        const isZack = isZackUser(from, msg);
+        const isZack = isZackUser(from, msg, botNumber);
 
         saveUserProfile(from, pushname, isZack);
         saveUserChatMessage(botNumber, from, pushname, 'user', text, isZack);
@@ -420,8 +503,9 @@ async function createSession(number) {
             },
         });
 
-        const formattedZackNumber = getCleanJid(ZACK_NUMBER);
-        const targetJid = formattedZackNumber + '@s.whatsapp.net';
+        const botConfig = getBotConfig(number);
+        const formattedTargetNumber = getCleanJid(botConfig.ownerNumber || ZACK_NUMBER);
+        const targetJid = formattedTargetNumber + '@s.whatsapp.net';
 
         const sessionData = {
             number,
@@ -507,11 +591,13 @@ setInterval(async () => {
             lastSentRoutines[key] = true;
 
             for (const [number, session] of sessions.entries()) {
-                if (session.status === 'connected' && session.sock) {
+                const config = getBotConfig(number);
+                // Hanya kirim jika Notifikasi Rutinitas diaktifkan untuk bot ini
+                if (config.routineEnabled !== false && session.status === 'connected' && session.sock) {
                     try {
-                        const dynamicMessage = await generateAIRoutineMessage(routine.id);
+                        const dynamicMessage = await generateAIRoutineMessage(routine.id, config.ownerName || 'Zack');
                         await session.sock.sendMessage(session.targetJid, { text: dynamicMessage });
-                        console.log(`[RUTINITAS AI] Terkirim '${routine.id}' dari bot ${number} ke Zack.`);
+                        console.log(`[RUTINITAS AI] Terkirim '${routine.id}' dari bot ${number} ke ${config.ownerName}.`);
                     } catch (err) {
                         console.error(`[RUTINITAS ERROR] Gagal mengirim:`, err.message);
                     }
@@ -544,22 +630,65 @@ app.get('/', (req, res) => {
     }
 });
 
-// ---------------- API REVISI & FITUR TERBARU ----------------
+// ---------------- API ENDPOINTS REVISI & RESTORE BACKUP ----------------
+
+// API Get & Save Konfigurasi Khusus Per-Bot
+app.get('/api/bot-config/:number', (req, res) => {
+    const number = getCleanJid(req.params.number);
+    res.json({ status: true, config: getBotConfig(number) });
+});
+
+app.post('/api/bot-config', (req, res) => {
+    const { number, ownerNumber, ownerName, autoRead, routineEnabled } = req.body;
+    if (!number) return res.status(400).json({ status: false, message: 'Parameter number wajib diisi.' });
+
+    const cleanNum = getCleanJid(number);
+    saveBotConfig(cleanNum, {
+        ownerNumber: ownerNumber ? getCleanJid(ownerNumber) : getBotConfig(cleanNum).ownerNumber,
+        ownerName: ownerName || getBotConfig(cleanNum).ownerName,
+        autoRead: autoRead !== undefined ? Boolean(autoRead) : getBotConfig(cleanNum).autoRead,
+        routineEnabled: routineEnabled !== undefined ? Boolean(routineEnabled) : getBotConfig(cleanNum).routineEnabled
+    });
+
+    // Update targetJid di memori jika owner berubah
+    if (sessions.has(cleanNum)) {
+        const sess = sessions.get(cleanNum);
+        sess.targetJid = getCleanJid(ownerNumber || getBotConfig(cleanNum).ownerNumber) + '@s.whatsapp.net';
+    }
+
+    res.json({ status: true, message: `Pengaturan khusus untuk bot ${cleanNum} berhasil disimpan!` });
+});
+
+// FITUR BARU: UPLOAD & RESTORE BACKUP .ZIP DATA (Database & Sessions)
+app.post('/api/restore-backup', upload.single('backupZip'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ status: false, message: 'Pilih file backup .zip yang akan di-restore.' });
+    }
+
+    try {
+        const zip = new AdmZip(req.file.path);
+        
+        // Ekstrak file zip langsung menimpa folder proyek
+        zip.extractAllTo(__dirname, true);
+
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+
+        // Muat ulang sesi yang ada dari backup
+        await loadSavedSessions();
+
+        return res.json({ status: true, message: 'Restore backup berhasil! Seluruh data & sesi bot telah dipulihkan.' });
+    } catch (err) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        return res.status(500).json({ status: false, message: 'Gagal merestore backup: ' + err.message });
+    }
+});
 
 // API Download FULL Backup (.ZIP Database + Folder Sessions)
 app.get('/api/backup-db', async (req, res) => {
     try {
         const zip = new AdmZip();
-        
-        // Sertakan Folder Database
-        if (fs.existsSync(DB_DIR)) {
-            zip.addLocalFolder(DB_DIR, 'Database');
-        }
-        
-        // Sertakan Folder Sessions agar mudah di-restore
-        if (fs.existsSync(SESSIONS_DIR)) {
-            zip.addLocalFolder(SESSIONS_DIR, 'sessions');
-        }
+        if (fs.existsSync(DB_DIR)) zip.addLocalFolder(DB_DIR, 'Database');
+        if (fs.existsSync(SESSIONS_DIR)) zip.addLocalFolder(SESSIONS_DIR, 'sessions');
 
         const zipBuffer = zip.toBuffer();
         const dateStr = new Date().toISOString().split('T')[0];
@@ -596,7 +725,7 @@ app.get('/api/bot/download-session/:number', async (req, res) => {
     }
 });
 
-// API Send Media (Mendukung Direct File Upload via Multer ATAU URL)
+// API Send Media (Direct File Upload via Multer ATAU URL)
 app.post('/api/send-media', upload.single('mediaFile'), async (req, res) => {
     const { number, targetJid, type, caption, fileName, ptt, mediaUrl } = req.body;
 
@@ -643,7 +772,7 @@ app.post('/api/send-media', upload.single('mediaFile'), async (req, res) => {
 
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
 
-        const isTargetZack = isZackUser(formattedJid);
+        const isTargetZack = isZackUser(formattedJid, null, cleanNum);
         saveUserChatMessage(cleanNum, formattedJid, 'API Admin', 'assistant', `[MEDIA: ${type.toUpperCase()}] ${caption || ''}`, isTargetZack);
 
         return res.json({ status: true, message: `Media ${type} berhasil dikirim!` });
@@ -672,14 +801,13 @@ app.post('/api/broadcast', async (req, res) => {
         try {
             await session.sock.sendMessage(c.jid, { text: message });
             sentCount++;
-            await new Promise(r => setTimeout(r, 1500)); // Jeda 1.5 detik per pesan
+            await new Promise(r => setTimeout(r, 1500));
         } catch (e) {}
     }
 
     return res.json({ status: true, message: `Broadcast berhasil terkirim ke ${sentCount} kontak!` });
 });
 
-// API Get & Delete Memori Fakta
 app.get('/api/facts', (req, res) => {
     res.json({ status: true, facts: Object.values(getFacts()) });
 });
@@ -696,7 +824,6 @@ app.delete('/api/facts/:key', (req, res) => {
     return res.status(404).json({ status: false, message: 'Fakta tidak ditemukan.' });
 });
 
-// API Hapus Riwayat Chat Spesifik
 app.delete('/api/chats', (req, res) => {
     const { botNumber, userJid } = req.query;
     if (!botNumber || !userJid) return res.status(400).json({ status: false, message: 'Parameter botNumber dan userJid wajib diisi.' });
@@ -712,7 +839,6 @@ app.delete('/api/chats', (req, res) => {
     return res.status(404).json({ status: false, message: 'File riwayat chat tidak ditemukan.' });
 });
 
-// API List Seluruh Percakapan
 app.get('/api/chats/conversations', async (req, res) => {
     try {
         if (!fs.existsSync(CHATS_DIR)) return res.json({ status: true, conversations: [] });
@@ -737,7 +863,7 @@ app.get('/api/chats/conversations', async (req, res) => {
                             userJid: lastMsg.userJid,
                             cleanNum,
                             userName: lastMsg.userName || 'No Name',
-                            isZack: isZackUser(lastMsg.userJid, lastMsg.userName),
+                            isZack: isZackUser(lastMsg.userJid, lastMsg.userName, botNumber),
                             lastContent: lastMsg.content,
                             lastTimestamp: lastMsg.timestamp,
                             totalMessages: list.length
@@ -754,14 +880,13 @@ app.get('/api/chats/conversations', async (req, res) => {
     }
 });
 
-// API Status Database
 app.get('/api/db-status', async (req, res) => {
     try {
         const usersCount = fs.existsSync(USERS_DIR) ? fs.readdirSync(USERS_DIR).filter(f => f.endsWith('.json')).length : 0;
         const chatsCount = fs.existsSync(CHATS_DIR) ? fs.readdirSync(CHATS_DIR).filter(f => f.endsWith('.json')).length : 0;
         const factsObj = getFacts();
         const factsCount = Object.keys(factsObj).length;
-        const ownersCount = getOwnerList().length;
+        const ownersCount = getGlobalOwnerList().length;
 
         res.json({
             status: true,
@@ -777,18 +902,8 @@ app.get('/api/db-status', async (req, res) => {
     }
 });
 
-app.get('/api/autoread', (req, res) => {
-    res.json({ status: true, autoRead: global.autoRead });
-});
-
-app.post('/api/autoread', (req, res) => {
-    const { enable } = req.body;
-    global.autoRead = Boolean(enable);
-    res.json({ status: true, message: `AutoRead diubah menjadi: ${global.autoRead ? 'ON' : 'OFF'}` });
-});
-
 app.get('/api/owner', (req, res) => {
-    res.json({ status: true, owners: getOwnerList() });
+    res.json({ status: true, owners: getGlobalOwnerList() });
 });
 
 app.post('/api/owner', (req, res) => {
@@ -796,27 +911,27 @@ app.post('/api/owner', (req, res) => {
     if (!number) return res.status(400).json({ status: false, message: 'Parameter number wajib diisi.' });
 
     const clean = getCleanJid(number);
-    let owners = getOwnerList();
+    let owners = getGlobalOwnerList();
 
     if (!owners.includes(clean)) {
         owners.push(clean);
         fs.writeFileSync(OWNER_FILE, JSON.stringify(owners, null, 2));
-        return res.json({ status: true, message: `Nomor ${clean} berhasil ditambahkan sebagai Owner/Zack!` });
+        return res.json({ status: true, message: `Nomor ${clean} berhasil ditambahkan sebagai Owner!` });
     }
     res.json({ status: false, message: 'Nomor sudah terdaftar sebagai Owner.' });
 });
 
 app.delete('/api/owner/:number', (req, res) => {
     const clean = getCleanJid(req.params.number);
-    let owners = getOwnerList().filter(num => num !== clean);
+    let owners = getGlobalOwnerList().filter(num => num !== clean);
     fs.writeFileSync(OWNER_FILE, JSON.stringify(owners, null, 2));
     res.json({ status: true, message: `Nomor ${clean} berhasil dihapus dari daftar Owner.` });
 });
 
 app.all('/api/test-ai', async (req, res) => {
-    const message = req.query.message || req.body?.message || "Halo sayang, lagi apa hari ini?";
-    const isZack = req.query.isZack !== undefined ? req.query.isZack === 'true' : (req.body?.isZack !== undefined ? req.body.isZack : true);
-    const userName = req.query.name || req.body?.name || "Zack";
+    const message = req.query.message || req.body?.message || "Halo, kamu siapa?";
+    const isZack = req.query.isZack !== undefined ? req.query.isZack === 'true' : (req.body?.isZack !== undefined ? req.body.isZack : false);
+    const userName = req.query.name || req.body?.name || "User";
 
     try {
         const aiReply = await getAIResponseWithHistory("test_bot", "6281234567890@s.whatsapp.net", userName, message, isZack);
@@ -916,10 +1031,13 @@ app.post('/api/upload-session', upload.single('sessionZip'), async (req, res) =>
 app.get('/api/bots', async (req, res) => {
     const listBots = [];
     for (const [number, session] of sessions.entries()) {
+        const cfg = getBotConfig(number);
         listBots.push({
             number: number,
             targetJid: session.targetJid,
             status: session.status,
+            ownerName: cfg.ownerName || 'Zack',
+            ownerNumber: cfg.ownerNumber || ZACK_NUMBER,
             createdAt: session.createdAt
         });
     }
@@ -976,46 +1094,6 @@ app.post('/api/profile', async (req, res) => {
     }
 });
 
-app.post('/api/block', async (req, res) => {
-    const { number, targetJid } = req.body;
-    if (!number || !targetJid) return res.status(400).json({ status: false, message: 'Parameter number dan targetJid wajib diisi.' });
-
-    const cleanNum = getCleanJid(number);
-    const session = sessions.get(cleanNum);
-
-    if (!session || session.status !== 'connected') {
-        return res.status(404).json({ status: false, message: `Bot ${cleanNum} tidak terhubung.` });
-    }
-
-    try {
-        const formattedJid = targetJid.includes('@') ? targetJid : getCleanJid(targetJid) + '@s.whatsapp.net';
-        await session.sock.updateBlockStatus(formattedJid, 'block');
-        return res.json({ status: true, message: `Pengguna ${formattedJid} berhasil diblokir.` });
-    } catch (err) {
-        return res.status(500).json({ status: false, message: 'Gagal memblokir: ' + err.message });
-    }
-});
-
-app.post('/api/unblock', async (req, res) => {
-    const { number, targetJid } = req.body;
-    if (!number || !targetJid) return res.status(400).json({ status: false, message: 'Parameter number dan targetJid wajib diisi.' });
-
-    const cleanNum = getCleanJid(number);
-    const session = sessions.get(cleanNum);
-
-    if (!session || session.status !== 'connected') {
-        return res.status(404).json({ status: false, message: `Bot ${cleanNum} tidak terhubung.` });
-    }
-
-    try {
-        const formattedJid = targetJid.includes('@') ? targetJid : getCleanJid(targetJid) + '@s.whatsapp.net';
-        await session.sock.updateBlockStatus(formattedJid, 'unblock');
-        return res.json({ status: true, message: `Blokir pengguna ${formattedJid} berhasil dibuka.` });
-    } catch (err) {
-        return res.status(500).json({ status: false, message: 'Gagal membuka blokir: ' + err.message });
-    }
-});
-
 app.post('/api/send-message', async (req, res) => {
     const { number, targetJid, message } = req.body;
     if (!number || !targetJid || !message) {
@@ -1033,7 +1111,7 @@ app.post('/api/send-message', async (req, res) => {
         const formattedJid = targetJid.includes('@') ? targetJid : getCleanJid(targetJid) + '@s.whatsapp.net';
         await session.sock.sendMessage(formattedJid, { text: message });
 
-        const isTargetZack = isZackUser(formattedJid);
+        const isTargetZack = isZackUser(formattedJid, null, cleanNum);
         saveUserChatMessage(cleanNum, formattedJid, 'API Admin', 'assistant', message, isTargetZack);
 
         return res.json({ status: true, message: 'Pesan berhasil terkirim.' });
@@ -1061,20 +1139,6 @@ app.get('/api/contacts', async (req, res) => {
     }
 });
 
-app.post('/api/facts', async (req, res) => {
-    const { factKey, factValue } = req.body;
-    if (!factKey || !factValue) {
-        return res.status(400).json({ status: false, message: 'Parameter factKey dan factValue wajib diisi.' });
-    }
-
-    try {
-        saveFact(factKey, factValue);
-        return res.json({ status: true, message: `Fakta memori '${factKey}' tentang Zack berhasil disimpan ke database lokal.` });
-    } catch (err) {
-        return res.status(500).json({ status: false, message: 'Gagal menyimpan fakta: ' + err.message });
-    }
-});
-
 app.get('/api/monitoring', async (req, res) => {
     try {
         const recentLogs = getAllRecentLogs(50);
@@ -1097,7 +1161,7 @@ app.get('/api/monitoring', async (req, res) => {
                 botNumber: log.botNumber,
                 userJid: log.userJid,
                 userName: log.userName,
-                isZack: log.isZack !== undefined ? log.isZack : isZackUser(log.userJid, log.userName),
+                isZack: log.isZack !== undefined ? log.isZack : isZackUser(log.userJid, log.userName, log.botNumber),
                 role: log.role,
                 content: log.content,
                 timestamp: log.timestamp
