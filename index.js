@@ -21,12 +21,16 @@ const {
     fetchLatestWaWebVersion 
 } = require('baileys');
 
-// Nomor Utama Zack
 const ZACK_NUMBER = '6283110390167@s.whatsapp.net';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const upload = multer({ dest: 'uploads/' });
+
+// Setup Multer untuk Upload File & Session
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+const upload = multer({ dest: UPLOADS_DIR });
 
 // Global AutoRead State
 global.autoRead = false;
@@ -85,7 +89,7 @@ function getCleanJid(jid) {
     return String(jid).split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
 }
 
-// Ambil semua daftar nomor Owner
+// Ambil daftar nomor Owner
 function getOwnerList() {
     let list = [getCleanJid(ZACK_NUMBER)];
     if (fs.existsSync(OWNER_FILE)) {
@@ -99,11 +103,10 @@ function getOwnerList() {
     return [...new Set(list.filter(Boolean))];
 }
 
-// FIX UTAMA: Pengecekan Zack Tingkat Lanjut (Nomor + LID + PushName)
+// Pengecekan Zack / Owner (Nomor + LID + PushName)
 function isZackUser(userJid, msgOrName = null) {
     const owners = getOwnerList();
 
-    // 1. Kumpulkan semua kandidat JID (termasuk LID & remoteJidAlt dari Baileys)
     let candidates = [userJid];
     let pushName = '';
 
@@ -123,11 +126,9 @@ function isZackUser(userJid, msgOrName = null) {
 
     const cleanCandidates = candidates.filter(Boolean).map(getCleanJid);
 
-    // 2. Cek apakah ada nomor kandidat yang cocok dengan list Owner
     const matchNumber = cleanCandidates.some(num => num && owners.includes(num));
     if (matchNumber) return true;
 
-    // 3. Fallback: Cek nama WhatsApp (Jika nama mengandung 'Zack')
     if (pushName && pushName.toLowerCase().includes('zack')) {
         return true;
     }
@@ -153,7 +154,7 @@ function saveUserChatMessage(botNumber, userJid, userName, role, content, isZack
         botNumber,
         userJid,
         userName,
-        isZack, // Simpan status Zack langsung di JSON log
+        isZack,
         role,
         content,
         timestamp: new Date()
@@ -164,7 +165,7 @@ function saveUserChatMessage(botNumber, userJid, userName, role, content, isZack
     fs.writeFileSync(filePath, JSON.stringify(list, null, 2), 'utf-8');
 }
 
-function getUserChats(botNumber, userJid, limit = 10) {
+function getUserChats(botNumber, userJid, limit = 50) {
     const cleanNum = getCleanJid(userJid);
     const filePath = path.join(CHATS_DIR, `${botNumber}_${cleanNum}.json`);
     if (!fs.existsSync(filePath)) return [];
@@ -345,12 +346,11 @@ Jangan ramah dan jangan perhatian. Jawab sangat singkat.`;
         : "Ada perlu apa ya?";
 }
 
-// FIX: Handler Pesan Masuk
+// Handler Pesan Masuk
 async function handleIncomingMessage(botNumber, sock, msg) {
     try {
         if (!msg.message || msg.key.fromMe) return;
 
-        // Ambil JID Asli (Prioritas: remoteJidAlt dari Baileys jika remoteJid berupa LID)
         const from = msg.key.remoteJidAlt || msg.key.remoteJid;
         if (!from || from.endsWith('@g.us') || from === 'status@broadcast') return;
 
@@ -366,7 +366,6 @@ async function handleIncomingMessage(botNumber, sock, msg) {
 
         if (!text.trim()) return;
 
-        // FIX: Evaluasi Deteksi Zack yang Komprehensif
         const isZack = isZackUser(from, msg);
 
         saveUserProfile(from, pushname, isZack);
@@ -545,7 +544,239 @@ app.get('/', (req, res) => {
     }
 });
 
-// API Autoread & Owner
+// ---------------- API REVISI & FITUR TERBARU ----------------
+
+// API Download FULL Backup (.ZIP Database + Folder Sessions)
+app.get('/api/backup-db', async (req, res) => {
+    try {
+        const zip = new AdmZip();
+        
+        // Sertakan Folder Database
+        if (fs.existsSync(DB_DIR)) {
+            zip.addLocalFolder(DB_DIR, 'Database');
+        }
+        
+        // Sertakan Folder Sessions agar mudah di-restore
+        if (fs.existsSync(SESSIONS_DIR)) {
+            zip.addLocalFolder(SESSIONS_DIR, 'sessions');
+        }
+
+        const zipBuffer = zip.toBuffer();
+        const dateStr = new Date().toISOString().split('T')[0];
+        const filename = `Backup_Full_Zack_Bot_${dateStr}.zip`;
+
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(zipBuffer);
+    } catch (err) {
+        res.status(500).json({ status: false, message: 'Gagal membuat full backup: ' + err.message });
+    }
+});
+
+// API Download Single Session Per Bot (.ZIP)
+app.get('/api/bot/download-session/:number', async (req, res) => {
+    const cleanNum = getCleanJid(req.params.number);
+    const sessionPath = path.join(SESSIONS_DIR, cleanNum);
+
+    if (!fs.existsSync(sessionPath)) {
+        return res.status(404).json({ status: false, message: `Folder sesi bot ${cleanNum} tidak ditemukan.` });
+    }
+
+    try {
+        const zip = new AdmZip();
+        zip.addLocalFolder(sessionPath);
+        const zipBuffer = zip.toBuffer();
+        const filename = `Session_Bot_${cleanNum}.zip`;
+
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(zipBuffer);
+    } catch (err) {
+        res.status(500).json({ status: false, message: 'Gagal mengunduh sesi: ' + err.message });
+    }
+});
+
+// API Send Media (Mendukung Direct File Upload via Multer ATAU URL)
+app.post('/api/send-media', upload.single('mediaFile'), async (req, res) => {
+    const { number, targetJid, type, caption, fileName, ptt, mediaUrl } = req.body;
+
+    if (!number || !targetJid || !type) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        return res.status(400).json({ status: false, message: 'Parameter number, targetJid, dan type wajib diisi.' });
+    }
+
+    const cleanNum = getCleanJid(number);
+    const session = sessions.get(cleanNum);
+
+    if (!session || session.status !== 'connected') {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        return res.status(404).json({ status: false, message: `Bot ${cleanNum} tidak terhubung.` });
+    }
+
+    try {
+        const formattedJid = targetJid.includes('@') ? targetJid : getCleanJid(targetJid) + '@s.whatsapp.net';
+        let mediaSource = null;
+
+        if (req.file) {
+            mediaSource = { url: req.file.path };
+        } else if (mediaUrl) {
+            mediaSource = { url: mediaUrl };
+        } else {
+            return res.status(400).json({ status: false, message: 'Upload file media atau sertakan mediaUrl.' });
+        }
+
+        let mediaPayload = {};
+        if (type === 'image') {
+            mediaPayload = { image: mediaSource, caption: caption || '' };
+        } else if (type === 'video') {
+            mediaPayload = { video: mediaSource, caption: caption || '' };
+        } else if (type === 'audio') {
+            mediaPayload = { audio: mediaSource, mimetype: 'audio/mp4', ptt: ptt === 'true' || ptt === true };
+        } else if (type === 'document') {
+            mediaPayload = { document: mediaSource, mimetype: req.file?.mimetype || 'application/pdf', fileName: fileName || req.file?.originalname || 'document.pdf', caption: caption || '' };
+        } else {
+            if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+            return res.status(400).json({ status: false, message: 'Tipe media tidak valid. Pilih: image, video, audio, atau document.' });
+        }
+
+        await session.sock.sendMessage(formattedJid, mediaPayload);
+
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+
+        const isTargetZack = isZackUser(formattedJid);
+        saveUserChatMessage(cleanNum, formattedJid, 'API Admin', 'assistant', `[MEDIA: ${type.toUpperCase()}] ${caption || ''}`, isTargetZack);
+
+        return res.json({ status: true, message: `Media ${type} berhasil dikirim!` });
+    } catch (err) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        return res.status(500).json({ status: false, message: 'Gagal mengirim media: ' + err.message });
+    }
+});
+
+// API Broadcast Pesan ke Semua Kontak
+app.post('/api/broadcast', async (req, res) => {
+    const { number, message } = req.body;
+    if (!number || !message) return res.status(400).json({ status: false, message: 'Parameter number dan message wajib diisi.' });
+
+    const cleanNum = getCleanJid(number);
+    const session = sessions.get(cleanNum);
+
+    if (!session || session.status !== 'connected') {
+        return res.status(404).json({ status: false, message: `Bot ${cleanNum} tidak terhubung.` });
+    }
+
+    const contacts = getAllContacts();
+    let sentCount = 0;
+
+    for (const c of contacts) {
+        try {
+            await session.sock.sendMessage(c.jid, { text: message });
+            sentCount++;
+            await new Promise(r => setTimeout(r, 1500)); // Jeda 1.5 detik per pesan
+        } catch (e) {}
+    }
+
+    return res.json({ status: true, message: `Broadcast berhasil terkirim ke ${sentCount} kontak!` });
+});
+
+// API Get & Delete Memori Fakta
+app.get('/api/facts', (req, res) => {
+    res.json({ status: true, facts: Object.values(getFacts()) });
+});
+
+app.delete('/api/facts/:key', (req, res) => {
+    const key = req.params.key;
+    const filePath = path.join(FACTS_DIR, 'facts.json');
+    let facts = getFacts();
+    if (facts[key]) {
+        delete facts[key];
+        fs.writeFileSync(filePath, JSON.stringify(facts, null, 2), 'utf-8');
+        return res.json({ status: true, message: `Fakta '${key}' berhasil dihapus.` });
+    }
+    return res.status(404).json({ status: false, message: 'Fakta tidak ditemukan.' });
+});
+
+// API Hapus Riwayat Chat Spesifik
+app.delete('/api/chats', (req, res) => {
+    const { botNumber, userJid } = req.query;
+    if (!botNumber || !userJid) return res.status(400).json({ status: false, message: 'Parameter botNumber dan userJid wajib diisi.' });
+
+    const cleanBot = getCleanJid(botNumber);
+    const cleanUser = getCleanJid(userJid);
+    const filePath = path.join(CHATS_DIR, `${cleanBot}_${cleanUser}.json`);
+
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        return res.json({ status: true, message: 'Riwayat chat berhasil dihapus.' });
+    }
+    return res.status(404).json({ status: false, message: 'File riwayat chat tidak ditemukan.' });
+});
+
+// API List Seluruh Percakapan
+app.get('/api/chats/conversations', async (req, res) => {
+    try {
+        if (!fs.existsSync(CHATS_DIR)) return res.json({ status: true, conversations: [] });
+
+        const files = fs.readdirSync(CHATS_DIR);
+        const conversations = [];
+
+        for (const file of files) {
+            if (file.endsWith('.json')) {
+                try {
+                    const filePath = path.join(CHATS_DIR, file);
+                    const list = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+                    if (list.length > 0) {
+                        const lastMsg = list[list.length - 1];
+                        const parts = file.replace('.json', '').split('_');
+                        const botNumber = parts[0];
+                        const cleanNum = parts[1] || '';
+
+                        conversations.push({
+                            file,
+                            botNumber,
+                            userJid: lastMsg.userJid,
+                            cleanNum,
+                            userName: lastMsg.userName || 'No Name',
+                            isZack: isZackUser(lastMsg.userJid, lastMsg.userName),
+                            lastContent: lastMsg.content,
+                            lastTimestamp: lastMsg.timestamp,
+                            totalMessages: list.length
+                        });
+                    }
+                } catch (e) {}
+            }
+        }
+
+        conversations.sort((a, b) => new Date(b.lastTimestamp) - new Date(a.lastTimestamp));
+        return res.json({ status: true, total: conversations.length, conversations });
+    } catch (err) {
+        return res.status(500).json({ status: false, message: 'Gagal memuat percakapan: ' + err.message });
+    }
+});
+
+// API Status Database
+app.get('/api/db-status', async (req, res) => {
+    try {
+        const usersCount = fs.existsSync(USERS_DIR) ? fs.readdirSync(USERS_DIR).filter(f => f.endsWith('.json')).length : 0;
+        const chatsCount = fs.existsSync(CHATS_DIR) ? fs.readdirSync(CHATS_DIR).filter(f => f.endsWith('.json')).length : 0;
+        const factsObj = getFacts();
+        const factsCount = Object.keys(factsObj).length;
+        const ownersCount = getOwnerList().length;
+
+        res.json({
+            status: true,
+            stats: {
+                totalUsers: usersCount,
+                totalChatFiles: chatsCount,
+                totalFacts: factsCount,
+                totalOwners: ownersCount
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ status: false, message: err.message });
+    }
+});
+
 app.get('/api/autoread', (req, res) => {
     res.json({ status: true, autoRead: global.autoRead });
 });
@@ -811,46 +1042,6 @@ app.post('/api/send-message', async (req, res) => {
     }
 });
 
-app.post('/api/send-media', async (req, res) => {
-    const { number, targetJid, type, mediaUrl, caption, fileName, ptt } = req.body;
-    if (!number || !targetJid || !type || !mediaUrl) {
-        return res.status(400).json({ status: false, message: 'Parameter number, targetJid, type (image|video|audio|document), dan mediaUrl wajib diisi.' });
-    }
-
-    const cleanNum = getCleanJid(number);
-    const session = sessions.get(cleanNum);
-
-    if (!session || session.status !== 'connected') {
-        return res.status(404).json({ status: false, message: `Bot ${cleanNum} tidak terhubung.` });
-    }
-
-    try {
-        const formattedJid = targetJid.includes('@') ? targetJid : getCleanJid(targetJid) + '@s.whatsapp.net';
-        let mediaPayload = {};
-
-        if (type === 'image') {
-            mediaPayload = { image: { url: mediaUrl }, caption: caption || '' };
-        } else if (type === 'video') {
-            mediaPayload = { video: { url: mediaUrl }, caption: caption || '' };
-        } else if (type === 'audio') {
-            mediaPayload = { audio: { url: mediaUrl }, mimetype: 'audio/mp4', ptt: ptt === true };
-        } else if (type === 'document') {
-            mediaPayload = { document: { url: mediaUrl }, mimetype: 'application/pdf', fileName: fileName || 'document.pdf', caption: caption || '' };
-        } else {
-            return res.status(400).json({ status: false, message: 'Tipe media tidak valid. Pilih: image, video, audio, atau document.' });
-        }
-
-        await session.sock.sendMessage(formattedJid, mediaPayload);
-
-        const isTargetZack = isZackUser(formattedJid);
-        saveUserChatMessage(cleanNum, formattedJid, 'API Admin', 'assistant', `[MEDIA: ${type.toUpperCase()}] ${caption || mediaUrl}`, isTargetZack);
-
-        return res.json({ status: true, message: `Media ${type} berhasil dikirim.` });
-    } catch (err) {
-        return res.status(500).json({ status: false, message: 'Gagal mengirim media: ' + err.message });
-    }
-});
-
 app.get('/api/contacts', async (req, res) => {
     try {
         const contacts = getAllContacts();
@@ -884,7 +1075,6 @@ app.post('/api/facts', async (req, res) => {
     }
 });
 
-// FIX: Endpoint Monitoring
 app.get('/api/monitoring', async (req, res) => {
     try {
         const recentLogs = getAllRecentLogs(50);
@@ -907,7 +1097,6 @@ app.get('/api/monitoring', async (req, res) => {
                 botNumber: log.botNumber,
                 userJid: log.userJid,
                 userName: log.userName,
-                // Gunakan status isZack tersimpan atau evaluasi fallback nama
                 isZack: log.isZack !== undefined ? log.isZack : isZackUser(log.userJid, log.userName),
                 role: log.role,
                 content: log.content,

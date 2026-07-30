@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Zack Bot Control</title>
 
-    <!-- FontAwesome untuk ikon seperlunya -->
+    <!-- FontAwesome CDN untuk ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
@@ -18,15 +18,15 @@
         }
 
         body {
-            background-color: #f4f6f8;
-            color: #222222;
-            padding-bottom: 20px;
+            background-color: #f8fafc;
+            color: #0f172a;
+            padding-bottom: 24px;
         }
 
         /* HEADER */
         header {
             background: #ffffff;
-            border-bottom: 1px solid #e1e4e8;
+            border-bottom: 1px solid #e2e8f0;
             padding: 12px 16px;
             display: flex;
             justify-content: space-between;
@@ -34,7 +34,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
         }
 
         .header-left {
@@ -44,44 +44,69 @@
         }
 
         .burger-btn {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            color: #333;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            color: #1e293b;
             cursor: pointer;
-            padding: 4px;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .burger-btn:active {
+            transform: scale(0.92);
         }
 
         header h1 {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #111;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        header h1 i {
+            color: #2563eb;
         }
 
         .api-badge {
             font-size: 0.7rem;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 12px;
-            background: #e6f4ea;
-            border: 1px solid #34a853;
-            color: #1e7e34;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
             display: flex;
             align-items: center;
             gap: 6px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }
 
         .api-badge.offline {
-            background: #fce8e6;
-            border-color: #d93025;
-            color: #d93025;
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #dc2626;
         }
 
         .pulse-dot {
-            width: 6px;
-            height: 6px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
             background-color: currentColor;
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0.4; transform: scale(0.9); }
         }
 
         /* SIDE DRAWER (BURGER MENU) */
@@ -91,25 +116,29 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(15, 23, 42, 0.35);
+            backdrop-filter: blur(2px);
             z-index: 200;
             display: none;
+            opacity: 0;
+            transition: opacity 0.25s ease;
         }
 
         .drawer-overlay.active {
             display: block;
+            opacity: 1;
         }
 
         .drawer {
             position: fixed;
             top: 0;
-            left: -260px;
-            width: 260px;
+            left: -270px;
+            width: 270px;
             height: 100%;
             background: #ffffff;
             z-index: 201;
-            transition: left 0.3s ease;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 4px 0 20px rgba(0,0,0,0.08);
             display: flex;
             flex-direction: column;
         }
@@ -119,133 +148,190 @@
         }
 
         .drawer-header {
-            padding: 16px;
-            border-bottom: 1px solid #e1e4e8;
-            font-size: 1.1rem;
-            font-weight: bold;
+            padding: 18px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 1rem;
+            font-weight: 800;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            color: #0f172a;
         }
 
         .drawer-close {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            color: #666;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            font-size: 1rem;
+            color: #64748b;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .drawer-menu {
             list-style: none;
-            padding: 10px 0;
+            padding: 12px 0;
         }
 
         .drawer-menu li {
             padding: 14px 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: #444;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #475569;
             cursor: pointer;
             border-left: 4px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+
+        .drawer-menu li i {
+            font-size: 1rem;
+            width: 20px;
+            text-align: center;
+            color: #64748b;
         }
 
         .drawer-menu li.active {
-            background: #eef2ff;
+            background: #eff6ff;
             color: #2563eb;
             border-left-color: #2563eb;
             font-weight: 700;
         }
 
+        .drawer-menu li.active i {
+            color: #2563eb;
+        }
+
         /* CONTAINER SECTIONS */
         .page-section {
             display: none;
-            padding: 12px;
+            padding: 14px;
+            animation: fadeIn 0.3s ease-in-out;
         }
 
         .page-section.active {
             display: block;
         }
 
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* CARDS & FORM */
         .card {
             background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 14px;
-            margin-bottom: 12px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .card-title {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: #111827;
-            margin-bottom: 12px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 14px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 1px solid #f3f4f6;
-            padding-bottom: 6px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title i {
+            color: #2563eb;
+            font-size: 0.95rem;
         }
 
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
 
         .stat-box {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 12px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px;
             text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-box i {
+            position: absolute;
+            right: -8px;
+            bottom: -8px;
+            font-size: 2.2rem;
+            color: #f1f5f9;
+            z-index: 0;
         }
 
         .stat-box .number {
-            font-size: 1.4rem;
-            font-weight: 700;
+            font-size: 1.5rem;
+            font-weight: 800;
             color: #2563eb;
+            position: relative;
+            z-index: 1;
         }
 
         .stat-box .label {
             font-size: 0.65rem;
-            color: #6b7280;
-            margin-top: 2px;
-            font-weight: 600;
+            color: #64748b;
+            margin-top: 4px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
         }
 
         .form-group {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         .form-group label {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 6px;
             font-size: 0.7rem;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 4px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 6px;
         }
 
         .form-control {
             width: 100%;
             background: #ffffff;
-            border: 1px solid #d1d5db;
-            padding: 10px;
-            border-radius: 6px;
-            color: #111827;
+            border: 1px solid #cbd5e1;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #0f172a;
             font-size: 0.85rem;
             outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         .form-control:focus {
             border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         textarea.form-control {
             resize: vertical;
-            height: 70px;
+            height: 75px;
         }
 
         /* BUTTONS */
@@ -253,31 +339,41 @@
             width: 100%;
             background: #2563eb;
             border: none;
-            padding: 10px;
-            border-radius: 6px;
+            padding: 11px;
+            border-radius: 8px;
             color: #ffffff;
             font-size: 0.8rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             text-align: center;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.15);
+            transition: all 0.2s ease;
         }
 
         .btn:active {
-            opacity: 0.85;
+            transform: scale(0.98);
+            opacity: 0.9;
         }
 
         .btn-danger {
             background: #dc2626;
-            color: #ffffff;
+            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.15);
+        }
+
+        .btn-success {
+            background: #16a34a;
+            box-shadow: 0 2px 4px rgba(22, 163, 74, 0.15);
         }
 
         .btn-secondary {
-            background: #e5e7eb;
-            color: #374151;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            box-shadow: none;
         }
 
         /* PAIRING BOX */
@@ -285,35 +381,35 @@
             text-align: center;
             background: #eff6ff;
             border: 1px dashed #2563eb;
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 10px;
+            padding: 14px;
+            border-radius: 10px;
+            margin-top: 12px;
             display: none;
         }
 
         .pairing-code {
-            font-size: 1.6rem;
+            font-size: 1.7rem;
             font-weight: 800;
             color: #2563eb;
-            letter-spacing: 3px;
-            margin: 6px 0;
+            letter-spacing: 4px;
+            margin: 8px 0;
         }
 
-        /* CHAT LOGS */
+        /* CHAT LIST & CONVERSATION LIST */
         .chat-list {
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 250px;
+            max-height: 280px;
             overflow-y: auto;
         }
 
         .chat-item {
-            background: #f9fafb;
+            background: #f8fafc;
             border-left: 3px solid #2563eb;
-            padding: 8px 10px;
-            border-radius: 4px;
-            font-size: 0.75rem;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
         }
 
         .chat-item.assistant {
@@ -324,9 +420,9 @@
         .chat-header {
             display: flex;
             justify-content: space-between;
-            color: #6b7280;
+            color: #64748b;
             font-size: 0.65rem;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
         .chat-user {
@@ -339,30 +435,38 @@
         }
 
         .chat-body {
-            color: #1f2937;
+            color: #1e293b;
             word-break: break-word;
+            line-height: 1.35;
         }
 
-        .bot-card {
+        .conversation-card {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
+            padding: 10px 12px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
             margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .bot-num {
-            color: #111827;
-            font-weight: 700;
-            font-size: 0.8rem;
+        .conversation-card:hover, .conversation-card.active {
+            border-color: #2563eb;
+            background: #f0f7ff;
         }
 
-        .bot-target {
-            font-size: 0.65rem;
-            color: #6b7280;
+        .owner-item, .bot-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
         }
 
         .toast {
@@ -370,14 +474,18 @@
             top: 15px;
             left: 50%;
             transform: translateX(-50%) translateY(-100px);
-            background: #111827;
+            background: #0f172a;
             color: #ffffff;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.75rem;
+            padding: 10px 18px;
+            border-radius: 24px;
+            font-size: 0.78rem;
+            font-weight: 600;
             z-index: 1000;
-            transition: transform 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .toast.show {
@@ -405,15 +513,15 @@
     <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
     <div class="drawer" id="drawer">
         <div class="drawer-header">
-            <span>Pilih Menu</span>
+            <span>Pilih Fitur</span>
             <button class="drawer-close" onclick="toggleDrawer()"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <ul class="drawer-menu">
-            <li class="active" onclick="switchTab(0)">Dashboard & Log</li>
-            <li onclick="switchTab(1)">Pairing & Sesi</li>
-            <li onclick="switchTab(2)">Daftar Bot & Profil</li>
-            <li onclick="switchTab(3)">Kirim Pesan & Media</li>
-            <li onclick="switchTab(4)">Memori & Kontak</li>
+            <li class="active" onclick="switchTab(0)"><i class="fa-solid fa-chart-line"></i> Dashboard & Log</li>
+            <li onclick="switchTab(1)"><i class="fa-solid fa-user-shield"></i> Cek Owner & System</li>
+            <li onclick="switchTab(2)"><i class="fa-solid fa-qrcode"></i> Pairing & Bot Active</li>
+            <li onclick="switchTab(3)"><i class="fa-solid fa-paper-plane"></i> Kirim Pesan & Media</li>
+            <li onclick="switchTab(4)"><i class="fa-solid fa-database"></i> Database & Backup</li>
         </ul>
     </div>
 
@@ -421,133 +529,155 @@
     <div class="page-section active" id="sec-0">
         <div class="stats-grid">
             <div class="stat-box">
+                <i class="fa-solid fa-robot"></i>
                 <div class="number" id="statBotCount">0</div>
                 <div class="label">BOT AKTIF</div>
             </div>
             <div class="stat-box">
+                <i class="fa-solid fa-comments"></i>
                 <div class="number" id="statLogsCount">0</div>
                 <div class="label">LOG CHAT</div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title">Tes Respon AI</div>
+            <div class="card-title"><i class="fa-solid fa-brain"></i> Tes Respon AI</div>
             <div class="form-group">
-                <label>Pesan Tes</label>
+                <label><i class="fa-solid fa-message"></i> Pesan Tes</label>
                 <input type="text" id="testAiMsg" class="form-control" placeholder="Contoh: Kamu lagi apa sayang?">
             </div>
             <div class="form-group">
-                <label>Perlakuan User</label>
+                <label><i class="fa-solid fa-user-tag"></i> Perlakuan Sender</label>
                 <select id="testAiRole" class="form-control">
                     <option value="true">Sebagai Zack (Pacar Manis)</option>
                     <option value="false">Sebagai Orang Lain (Cuek)</option>
                 </select>
             </div>
-            <button class="btn" onclick="runTestAi()">Tes Respon AI</button>
-            <div id="testAiResult" style="margin-top:10px; font-size:0.75rem; color:#2563eb; display:none; background:#f0f7ff; padding:10px; border-radius:6px; border:1px solid #bfdbfe;"></div>
+            <button class="btn" onclick="runTestAi()"><i class="fa-solid fa-vial"></i> Tes Respon AI</button>
+            <div id="testAiResult" style="margin-top:10px; font-size:0.75rem; color:#2563eb; display:none; background:#f0f7ff; padding:10px; border-radius:8px; border:1px solid #bfdbfe;"></div>
         </div>
 
         <div class="card">
-            <div class="card-title">Live Monitoring Chat</div>
+            <div class="card-title"><i class="fa-solid fa-desktop"></i> Live Monitoring Chat (Rinci)</div>
             <div class="chat-list" id="monitoringLogs">
-                <div style="text-align:center; font-size:0.75rem; color:#6b7280; padding:15px;">Memuat data...</div>
+                <div style="text-align:center; font-size:0.75rem; color:#64748b; padding:15px;">Memuat data...</div>
             </div>
         </div>
     </div>
 
-    <!-- PAGE 1: PAIRING & ZIP -->
+    <!-- PAGE 1: OWNER & SYSTEM FITUR -->
     <div class="page-section" id="sec-1">
         <div class="card">
-            <div class="card-title">Generate Pairing Code</div>
-            <div class="form-group">
-                <label>Nomor WhatsApp Bot</label>
-                <input type="number" id="pairNumber" class="form-control" placeholder="Contoh: 628123456789">
-            </div>
-            <button class="btn" onclick="requestPairing()">Minta Kode Pairing</button>
-
-            <div class="pairing-box" id="pairingBox">
-                <div style="font-size:0.65rem; color:#6b7280;">KODE PAIRING ANDA</div>
-                <div class="pairing-code" id="pairingCodeVal">----</div>
-                <div style="font-size:0.65rem; color:#6b7280;">Masukkan kode ini di WhatsApp HP Anda</div>
+            <div class="card-title"><i class="fa-solid fa-sliders"></i> Fitur Auto Read Pesan</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span style="font-size:0.8rem; font-weight:700;"><i class="fa-solid fa-check-double" style="color:#2563eb;"></i> Status Auto Read</span>
+                <button class="btn" id="btnAutoRead" style="width:auto; padding:6px 16px;" onclick="toggleAutoRead()"><i class="fa-solid fa-spinner fa-spin"></i> LOAD</button>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title">Upload Session (.ZIP)</div>
+            <div class="card-title"><i class="fa-solid fa-user-shield"></i> Kelola & Cek Owner (Zack)</div>
             <div class="form-group">
-                <label>Nomor Bot</label>
-                <input type="number" id="zipNumber" class="form-control" placeholder="Contoh: 628123456789">
+                <label><i class="fa-solid fa-phone"></i> Tambah Nomor Owner Baru</label>
+                <input type="number" id="newOwnerNum" class="form-control" placeholder="628123456789">
+            </div>
+            <button class="btn" onclick="addOwner()"><i class="fa-solid fa-user-plus"></i> Tambah Owner</button>
+            
+            <div style="margin-top:12px;" id="ownerListContainer">
+                <div style="text-align:center; font-size:0.75rem; color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat daftar owner...</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-bullhorn"></i> Kirim Broadcast Ke Semua Kontak</div>
+            <div class="form-group">
+                <label><i class="fa-solid fa-robot"></i> Dari Bot</label>
+                <select id="broadcastBotSelect" class="form-control">
+                    <option value="">-- Pilih Bot --</option>
+                </select>
             </div>
             <div class="form-group">
-                <label>File Sesi (.ZIP)</label>
-                <input type="file" id="zipFile" accept=".zip" class="form-control">
+                <label><i class="fa-solid fa-comment-dots"></i> Pesan Broadcast</label>
+                <textarea id="broadcastText" class="form-control" placeholder="Pengumuman / Pesan broadcast..."></textarea>
             </div>
-            <button class="btn" onclick="uploadZipSession()">Upload & Jalankan</button>
+            <button class="btn btn-success" onclick="sendBroadcast()"><i class="fa-solid fa-paper-plane"></i> Kirim Broadcast Kontak</button>
         </div>
     </div>
 
-    <!-- PAGE 2: BOTS & PROFILE -->
+    <!-- PAGE 2: PAIRING & BOTS -->
     <div class="page-section" id="sec-2">
         <div class="card">
-            <div class="card-title">Daftar Bot Terhubung</div>
-            <div id="botListContainer">
-                <div style="text-align:center; font-size:0.75rem; color:#6b7280; padding:15px;">Belum ada bot terhubung.</div>
+            <div class="card-title"><i class="fa-solid fa-qrcode"></i> Generate Pairing Code</div>
+            <div class="form-group">
+                <label><i class="fa-solid fa-mobile-screen"></i> Nomor WhatsApp Bot</label>
+                <input type="number" id="pairNumber" class="form-control" placeholder="628123456789">
+            </div>
+            <button class="btn" onclick="requestPairing()"><i class="fa-solid fa-key"></i> Minta Kode Pairing</button>
+
+            <div class="pairing-box" id="pairingBox">
+                <div style="font-size:0.68rem; color:#64748b; font-weight:700;">KODE PAIRING ANDA</div>
+                <div class="pairing-code" id="pairingCodeVal">----</div>
+                <div style="font-size:0.65rem; color:#64748b;">Masukkan kode ini di WhatsApp HP Anda</div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title">Update Profil Bot</div>
+            <div class="card-title"><i class="fa-solid fa-file-arrow-up"></i> Upload Session (.ZIP)</div>
             <div class="form-group">
-                <label>Nomor Bot</label>
-                <input type="number" id="profileBotNum" class="form-control" placeholder="628123456789">
+                <label><i class="fa-solid fa-phone"></i> Nomor Bot</label>
+                <input type="number" id="zipNumber" class="form-control" placeholder="628123456789">
             </div>
             <div class="form-group">
-                <label>Nama Baru (PushName)</label>
-                <input type="text" id="profileName" class="form-control" placeholder="Nama Bot">
+                <label><i class="fa-solid fa-file-zipper"></i> File Sesi (.ZIP)</label>
+                <input type="file" id="zipFile" accept=".zip" class="form-control">
             </div>
-            <div class="form-group">
-                <label>Bio Baru (Status)</label>
-                <input type="text" id="profileBio" class="form-control" placeholder="Status WhatsApp">
+            <button class="btn" onclick="uploadZipSession()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload & Ekstrak</button>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-plug"></i> Daftar Bot Terhubung & Download Sesi</div>
+            <div id="botListContainer">
+                <div style="text-align:center; font-size:0.75rem; color:#64748b; padding:15px;">Belum ada bot.</div>
             </div>
-            <div class="form-group">
-                <label>URL Foto Profil</label>
-                <input type="url" id="profileImgUrl" class="form-control" placeholder="https://site.com/foto.jpg">
-            </div>
-            <button class="btn" onclick="updateProfile()">Simpan Profil</button>
         </div>
     </div>
 
-    <!-- PAGE 3: SEND MESSAGE & MEDIA -->
+    <!-- PAGE 3: KIRIM PESAN & MEDIA (DIRECT UPLOAD FILE) -->
     <div class="page-section" id="sec-3">
         <div class="card">
-            <div class="card-title">Kirim Pesan Teks</div>
+            <div class="card-title"><i class="fa-solid fa-paper-plane"></i> Kirim Pesan Teks</div>
             <div class="form-group">
-                <label>Dari Bot (Nomor)</label>
-                <input type="number" id="sendMsgBot" class="form-control" placeholder="628xxx">
+                <label><i class="fa-solid fa-robot"></i> Pilih Bot Pengirim</label>
+                <select id="sendMsgBotSelect" class="form-control">
+                    <option value="">-- Pilih Bot --</option>
+                </select>
             </div>
             <div class="form-group">
-                <label>Ke Nomor / JID Target</label>
-                <input type="text" id="sendMsgTarget" class="form-control" placeholder="628xxx">
+                <label><i class="fa-solid fa-user-check"></i> Pilih / Ketik Target</label>
+                <input type="text" id="sendMsgTarget" class="form-control" placeholder="Nomor / JID (Contoh: 628xxx)">
             </div>
             <div class="form-group">
-                <label>Pesan</label>
+                <label><i class="fa-solid fa-pen"></i> Isi Pesan</label>
                 <textarea id="sendMsgText" class="form-control" placeholder="Ketik pesan di sini..."></textarea>
             </div>
-            <button class="btn" onclick="sendTextMessage()">Kirim Pesan</button>
+            <button class="btn" onclick="sendTextMessage()"><i class="fa-solid fa-paper-plane"></i> Kirim Pesan</button>
         </div>
 
+        <!-- FITUR BARU: KIRIM MEDIA DENGAN DIRECT FILE UPLOAD -->
         <div class="card">
-            <div class="card-title">Kirim Media</div>
+            <div class="card-title"><i class="fa-solid fa-photo-film"></i> Kirim Media (Upload File Langsung)</div>
             <div class="form-group">
-                <label>Dari Bot (Nomor)</label>
-                <input type="number" id="mediaBot" class="form-control" placeholder="628xxx">
+                <label><i class="fa-solid fa-robot"></i> Pilih Bot Pengirim</label>
+                <select id="mediaBotSelect" class="form-control">
+                    <option value="">-- Pilih Bot --</option>
+                </select>
             </div>
             <div class="form-group">
-                <label>Ke Target</label>
+                <label><i class="fa-solid fa-user"></i> Target Nomor / JID</label>
                 <input type="text" id="mediaTarget" class="form-control" placeholder="628xxx">
             </div>
             <div class="form-group">
-                <label>Tipe Media</label>
+                <label><i class="fa-solid fa-icons"></i> Tipe Media</label>
                 <select id="mediaType" class="form-control">
                     <option value="image">Gambar (Image)</option>
                     <option value="video">Video</option>
@@ -556,79 +686,96 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>URL Media</label>
-                <input type="url" id="mediaUrl" class="form-control" placeholder="https://site.com/file.png">
+                <label><i class="fa-solid fa-file-arrow-up"></i> Upload File Media</label>
+                <input type="file" id="mediaFileInput" class="form-control">
             </div>
             <div class="form-group">
-                <label>Caption / Keterangan</label>
+                <label><i class="fa-solid fa-closed-captioning"></i> Caption / Description</label>
                 <input type="text" id="mediaCaption" class="form-control" placeholder="Keterangan file...">
             </div>
-            <button class="btn" onclick="sendMediaMessage()">Kirim Media</button>
+            <button class="btn" onclick="sendMediaMessage()"><i class="fa-solid fa-share-nodes"></i> Upload & Kirim Media</button>
         </div>
     </div>
 
-    <!-- PAGE 4: MEMORY & CONTACTS -->
+    <!-- PAGE 4: DATABASE & HISTORY CHAT DENGAN FULL BACKUP -->
     <div class="page-section" id="sec-4">
+        <!-- DB BACKUP CARD (DATABASE + SESSIONS) -->
         <div class="card">
-            <div class="card-title">Memori Fakta Zack</div>
+            <div class="card-title"><i class="fa-solid fa-server"></i> Cek & Full Backup Data</div>
+            <div class="stats-grid" style="margin-bottom:10px;">
+                <div class="stat-box">
+                    <i class="fa-solid fa-users"></i>
+                    <div class="number" id="dbUsersCount">0</div>
+                    <div class="label">USER DATABASE</div>
+                </div>
+                <div class="stat-box">
+                    <i class="fa-solid fa-file-code"></i>
+                    <div class="number" id="dbChatsCount">0</div>
+                    <div class="label">FILE CHAT</div>
+                </div>
+            </div>
+            <button class="btn btn-success" onclick="downloadDbBackup()"><i class="fa-solid fa-file-zipper"></i> Download Full Backup (Database & Sessions .ZIP)</button>
+        </div>
+
+        <!-- RIWAYAT CHAT OTOMATIS -->
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-comments"></i> Riwayat Chat (Klik untuk Detail)</div>
+            <div id="conversationListContainer">
+                <div style="text-align:center; font-size:0.75rem; color:#64748b; padding:15px;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat daftar percakapan...</div>
+            </div>
+
+            <!-- Detail Chat Modal Box -->
+            <div id="chatDetailBox" style="display:none; margin-top:12px; border-top:1px solid #e2e8f0; padding-top:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span id="chatDetailTitle" style="font-size:0.8rem; font-weight:700; color:#2563eb;">--</span>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn btn-danger" style="width:auto; padding:4px 8px; font-size:0.65rem;" id="btnDeleteChatHist"><i class="fa-solid fa-trash"></i> Hapus</button>
+                        <button class="btn btn-secondary" style="width:auto; padding:4px 8px; font-size:0.65rem;" onclick="closeChatDetail()"><i class="fa-solid fa-xmark"></i> Tutup</button>
+                    </div>
+                </div>
+                <div class="chat-list" id="chatDetailContainer"></div>
+            </div>
+        </div>
+
+        <!-- MEMORI FAKTA LIST & DELETE -->
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-brain"></i> Memori Fakta Zack</div>
             <div class="form-group">
-                <label>Nama Fakta (Key)</label>
+                <label><i class="fa-solid fa-key"></i> Nama Fakta (Key)</label>
                 <input type="text" id="factKey" class="form-control" placeholder="Contoh: Makanan Favorit">
             </div>
             <div class="form-group">
-                <label>Isi Fakta (Value)</label>
+                <label><i class="fa-solid fa-quote-left"></i> Isi Fakta (Value)</label>
                 <input type="text" id="factVal" class="form-control" placeholder="Contoh: Nasi Goreng Pedas">
             </div>
-            <button class="btn" onclick="saveFact()">Simpan Memori AI</button>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Block / Unblock User</div>
-            <div class="form-group">
-                <label>Dari Bot (Nomor)</label>
-                <input type="number" id="blockBot" class="form-control" placeholder="628xxx">
-            </div>
-            <div class="form-group">
-                <label>Target User JID / Nomor</label>
-                <input type="text" id="blockTarget" class="form-control" placeholder="628xxx">
-            </div>
-            <div style="display:flex; gap:8px;">
-                <button class="btn btn-danger" style="flex:1;" onclick="toggleBlock('block')">Blokir</button>
-                <button class="btn btn-secondary" style="flex:1;" onclick="toggleBlock('unblock')">Unblock</button>
+            <button class="btn" onclick="saveFact()"><i class="fa-solid fa-floppy-disk"></i> Simpan Memori AI</button>
+            
+            <div style="margin-top:12px;" id="factsListContainer">
+                <div style="text-align:center; font-size:0.75rem; color:#64748b;">Memuat memori...</div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title">Riwayat Chat User</div>
-            <div class="form-group">
-                <label>Nomor Bot</label>
-                <input type="number" id="chatSearchBot" class="form-control" placeholder="628xxx">
-            </div>
-            <div class="form-group">
-                <label>Nomor / JID User</label>
-                <input type="text" id="chatSearchUser" class="form-control" placeholder="628xxx">
-            </div>
-            <button class="btn btn-secondary" onclick="fetchUserChatHistory()">Cari History Chat</button>
-            <div class="chat-list" id="userChatHistoryContainer" style="margin-top:10px; max-height:200px;"></div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Kontak Tersimpan</div>
+            <div class="card-title"><i class="fa-solid fa-address-book"></i> Kontak Tersimpan</div>
             <div id="contactListContainer" style="font-size:0.75rem;">
-                <div style="text-align:center; color:#6b7280; padding:10px;">Memuat kontak...</div>
+                <div style="text-align:center; color:#64748b; padding:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat kontak...</div>
             </div>
         </div>
     </div>
 
-    <div class="toast" id="toast">Notifikasi Sistem</div>
+    <div class="toast" id="toast"><i class="fa-solid fa-circle-info"></i> <span id="toastMsg">Notifikasi</span></div>
 
     <script>
         const API_BASE = window.location.origin;
         let currentTab = 0;
+        let autoReadState = false;
+        let activeBotsList = [];
+        let activeOpenedBot = '';
+        let activeOpenedUser = '';
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
-            toast.innerText = msg;
+            document.getElementById('toastMsg').innerText = msg;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
@@ -640,26 +787,21 @@
 
         function switchTab(index) {
             currentTab = index;
-            
-            // Switch Menu list
-            const menuItems = document.querySelectorAll('.drawer-menu li');
-            menuItems.forEach((item, i) => {
+            document.querySelectorAll('.drawer-menu li').forEach((item, i) => {
                 if (i === index) item.classList.add('active');
                 else item.classList.remove('active');
             });
-
-            // Switch Sections
-            const sections = document.querySelectorAll('.page-section');
-            sections.forEach((sec, i) => {
+            document.querySelectorAll('.page-section').forEach((sec, i) => {
                 if (i === index) sec.classList.add('active');
                 else sec.classList.remove('active');
             });
-
-            toggleDrawer(); // tutup drawer setelah dipilihh
+            toggleDrawer();
 
             if (index === 0) fetchMonitoring();
+            if (index === 1) { fetchAutoRead(); fetchOwners(); populateBotDropdowns(); }
             if (index === 2) fetchBots();
-            if (index === 4) fetchContacts();
+            if (index === 3) populateBotDropdowns();
+            if (index === 4) { fetchDbStatus(); fetchConversations(); fetchFactsList(); fetchContacts(); }
         }
 
         async function checkAPIStatus() {
@@ -675,22 +817,97 @@
             }
         }
 
+        async function fetchAutoRead() {
+            try {
+                const res = await fetch(`${API_BASE}/api/autoread`);
+                const data = await res.json();
+                autoReadState = data.autoRead;
+                const btn = document.getElementById('btnAutoRead');
+                btn.innerHTML = autoReadState ? '<i class="fa-solid fa-toggle-on"></i> ON' : '<i class="fa-solid fa-toggle-off"></i> OFF';
+                btn.className = autoReadState ? 'btn' : 'btn btn-secondary';
+            } catch (e) {}
+        }
+
+        async function toggleAutoRead() {
+            try {
+                const res = await fetch(`${API_BASE}/api/autoread`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enable: !autoReadState })
+                });
+                const data = await res.json();
+                showToast(data.message);
+                fetchAutoRead();
+            } catch (e) {
+                showToast('Gagal toggle autoread');
+            }
+        }
+
+        async function fetchOwners() {
+            try {
+                const res = await fetch(`${API_BASE}/api/owner`);
+                const data = await res.json();
+                const container = document.getElementById('ownerListContainer');
+                if (data.status && data.owners.length > 0) {
+                    container.innerHTML = data.owners.map(num => `
+                        <div class="owner-item">
+                            <span style="font-weight:700; font-size:0.8rem;"><i class="fa-solid fa-user-check" style="color:#2563eb;"></i> ${num} <small style="color:#9333ea;">(Zack / Owner)</small></span>
+                            <button class="btn btn-danger" style="width:auto; padding:4px 10px;" onclick="deleteOwner('${num}')">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="text-align:center; color:#64748b; font-size:0.75rem;">Belum ada owner tersimpan.</div>';
+                }
+            } catch (e) {
+                showToast('Gagal memuat list owner');
+            }
+        }
+
+        async function addOwner() {
+            const number = document.getElementById('newOwnerNum').value;
+            if (!number) return showToast('Isi nomor owner!');
+
+            try {
+                const res = await fetch(`${API_BASE}/api/owner`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number })
+                });
+                const data = await res.json();
+                showToast(data.message);
+                document.getElementById('newOwnerNum').value = '';
+                fetchOwners();
+            } catch (e) {
+                showToast('Gagal menambah owner');
+            }
+        }
+
+        async function deleteOwner(num) {
+            if (!confirm(`Hapus ${num} dari owner?`)) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/owner/${num}`, { method: 'DELETE' });
+                const data = await res.json();
+                showToast(data.message);
+                fetchOwners();
+            } catch (e) {
+                showToast('Gagal menghapus owner');
+            }
+        }
+
         async function runTestAi() {
             const message = document.getElementById('testAiMsg').value || 'Halo sayang';
             const isZack = document.getElementById('testAiRole').value === 'true';
             const resBox = document.getElementById('testAiResult');
 
             resBox.style.display = 'block';
-            resBox.innerText = 'Memproses respon AI...';
+            resBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses respon AI...';
 
             try {
                 const res = await fetch(`${API_BASE}/api/test-ai?message=${encodeURIComponent(message)}&isZack=${isZack}`);
                 const data = await res.json();
-                if (data.status) {
-                    resBox.innerText = `[AI Respon]: ${data.aiResponse}`;
-                } else {
-                    resBox.innerText = `[Gagal]: ${data.error || 'Terjadi kesalahan'}`;
-                }
+                resBox.innerText = `[AI Respon]: ${data.aiResponse}`;
             } catch (e) {
                 resBox.innerText = '[Error]: Gagal menghubungi API server.';
             }
@@ -706,41 +923,38 @@
 
                     const container = document.getElementById('monitoringLogs');
                     if (!data.recentChatLogs || data.recentChatLogs.length === 0) {
-                        container.innerHTML = '<div style="text-align:center; font-size:0.75rem; color:#6b7280; padding:15px;">Belum ada log pesan.</div>';
+                        container.innerHTML = '<div style="text-align:center; font-size:0.75rem; color:#64748b; padding:15px;">Belum ada log pesan.</div>';
                         return;
                     }
 
+                    // RINCI: Tampilkan Nomor Bot & PushName User
                     container.innerHTML = data.recentChatLogs.map(log => `
                         <div class="chat-item ${log.role}">
                             <div class="chat-header">
-                                <span class="chat-user">${log.userName} (${log.isZack ? 'Zack ❤️' : 'Orang Lain'})</span>
+                                <span class="chat-user">
+                                    <i class="fa-solid fa-robot" style="color:#2563eb;"></i> Bot [${log.botNumber}] &nbsp;|&nbsp; 
+                                    <i class="fa-solid fa-user"></i> ${log.userName} (${log.isZack ? 'Zack ❤️' : 'Orang Lain'})
+                                </span>
                                 <span>${new Date(log.timestamp).toLocaleTimeString()}</span>
                             </div>
                             <div class="chat-body">${log.content}</div>
                         </div>
                     `).join('');
                 }
-            } catch (e) {
-                showToast('Gagal memuat monitoring');
-            }
+            } catch (e) {}
         }
 
         async function requestPairing() {
             const num = document.getElementById('pairNumber').value;
             if (!num) return showToast('Masukkan nomor bot!');
 
-            showToast('Meminta kode pairing...');
             try {
                 const res = await fetch(`${API_BASE}/api/pairing?number=${num}`);
                 const data = await res.json();
-
                 if (data.status) {
                     document.getElementById('pairingBox').style.display = 'block';
                     document.getElementById('pairingCodeVal').innerText = data.pairingCode || '----';
-                    showToast('Kode pairing berhasil didapat!');
-                } else {
-                    showToast(data.message);
-                }
+                } else showToast(data.message);
             } catch (e) {
                 showToast('Gagal terhubung ke API');
             }
@@ -750,7 +964,7 @@
             const num = document.getElementById('zipNumber').value;
             const fileInput = document.getElementById('zipFile');
 
-            if (!num || fileInput.files.length === 0) return showToast('Isi nomor dan pilih file .zip!');
+            if (!num || fileInput.files.length === 0) return showToast('Isi nomor & pilih file .zip!');
 
             const formData = new FormData();
             formData.append('number', num);
@@ -758,10 +972,7 @@
 
             showToast('Mengupload sesi zip...');
             try {
-                const res = await fetch(`${API_BASE}/api/upload-session`, {
-                    method: 'POST',
-                    body: formData
-                });
+                const res = await fetch(`${API_BASE}/api/upload-session`, { method: 'POST', body: formData });
                 const data = await res.json();
                 showToast(data.message);
             } catch (e) {
@@ -773,31 +984,34 @@
             try {
                 const res = await fetch(`${API_BASE}/api/bots`);
                 const data = await res.json();
+                activeBotsList = data.bots || [];
                 const container = document.getElementById('botListContainer');
 
                 if (data.status && data.bots.length > 0) {
                     container.innerHTML = data.bots.map(bot => `
                         <div class="bot-card">
                             <div>
-                                <div class="bot-num">${bot.number}</div>
-                                <div class="bot-target">Target: ${bot.targetJid} | Status: ${bot.status}</div>
+                                <div style="font-weight:700; font-size:0.8rem;"><i class="fa-solid fa-robot" style="color:#2563eb;"></i> ${bot.number}</div>
+                                <div style="font-size:0.65rem; color:#64748b;">Status: <span style="color:#16a34a; font-weight:700;">${bot.status}</span></div>
                             </div>
-                            <button class="btn btn-danger" style="width:auto; padding:6px 12px;" onclick="deleteBot('${bot.number}')">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
+                            <div style="display:flex; gap:6px;">
+                                <a href="${API_BASE}/api/bot/download-session/${bot.number}" class="btn btn-secondary" style="width:auto; padding:6px 10px; font-size:0.7rem;" title="Download Sesi ZIP">
+                                    <i class="fa-solid fa-download"></i> Sesi
+                                </a>
+                                <button class="btn btn-danger" style="width:auto; padding:6px 10px;" onclick="deleteBot('${bot.number}')">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     `).join('');
                 } else {
-                    container.innerHTML = '<div style="text-align:center; font-size:0.75rem; color:#6b7280; padding:15px;">Belum ada bot terhubung.</div>';
+                    container.innerHTML = '<div style="text-align:center; font-size:0.75rem; color:#64748b; padding:15px;">Belum ada bot terhubung.</div>';
                 }
-            } catch (e) {
-                showToast('Gagal memuat list bot');
-            }
+            } catch (e) {}
         }
 
         async function deleteBot(num) {
             if (!confirm(`Hapus sesi bot ${num}?`)) return;
-
             try {
                 const res = await fetch(`${API_BASE}/api/bot/${num}`, { method: 'DELETE' });
                 const data = await res.json();
@@ -808,33 +1022,28 @@
             }
         }
 
-        async function updateProfile() {
-            const number = document.getElementById('profileBotNum').value;
-            const name = document.getElementById('profileName').value;
-            const bio = document.getElementById('profileBio').value;
-            const imageUrl = document.getElementById('profileImgUrl').value;
-
-            if (!number) return showToast('Isi nomor bot!');
-
-            try {
-                const res = await fetch(`${API_BASE}/api/profile`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ number, name, bio, imageUrl })
+        async function populateBotDropdowns() {
+            await fetchBots();
+            const selects = [
+                document.getElementById('sendMsgBotSelect'), 
+                document.getElementById('mediaBotSelect'),
+                document.getElementById('broadcastBotSelect')
+            ];
+            selects.forEach(select => {
+                if (!select) return;
+                select.innerHTML = '<option value="">-- Pilih Bot Pengirim --</option>';
+                activeBotsList.forEach(b => {
+                    select.innerHTML += `<option value="${b.number}">${b.number} (${b.status})</option>`;
                 });
-                const data = await res.json();
-                showToast(data.message);
-            } catch (e) {
-                showToast('Gagal update profil');
-            }
+            });
         }
 
         async function sendTextMessage() {
-            const number = document.getElementById('sendMsgBot').value;
+            const number = document.getElementById('sendMsgBotSelect').value;
             const targetJid = document.getElementById('sendMsgTarget').value;
             const message = document.getElementById('sendMsgText').value;
 
-            if (!number || !targetJid || !message) return showToast('Isi semua field pesan!');
+            if (!number || !targetJid || !message) return showToast('Pilih bot, target, & isi pesan!');
 
             try {
                 const res = await fetch(`${API_BASE}/api/send-message`, {
@@ -844,31 +1053,194 @@
                 });
                 const data = await res.json();
                 showToast(data.message);
+                if (data.status) document.getElementById('sendMsgText').value = '';
             } catch (e) {
                 showToast('Gagal mengirim pesan');
             }
         }
 
+        // PEMBARUAN: Send Media via Direct File Upload
         async function sendMediaMessage() {
-            const number = document.getElementById('mediaBot').value;
+            const number = document.getElementById('mediaBotSelect').value;
             const targetJid = document.getElementById('mediaTarget').value;
             const type = document.getElementById('mediaType').value;
-            const mediaUrl = document.getElementById('mediaUrl').value;
             const caption = document.getElementById('mediaCaption').value;
+            const fileInput = document.getElementById('mediaFileInput');
 
-            if (!number || !targetJid || !mediaUrl) return showToast('Isi semua field media!');
+            if (!number || !targetJid || fileInput.files.length === 0) {
+                return showToast('Pilih bot, target, & pilih file media!');
+            }
 
+            const formData = new FormData();
+            formData.append('number', number);
+            formData.append('targetJid', targetJid);
+            formData.append('type', type);
+            formData.append('caption', caption);
+            formData.append('mediaFile', fileInput.files[0]);
+
+            showToast('Mengupload & mengirim media...');
             try {
                 const res = await fetch(`${API_BASE}/api/send-media`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ number, targetJid, type, mediaUrl, caption })
+                    body: formData
                 });
                 const data = await res.json();
                 showToast(data.message);
+                if (data.status) {
+                    document.getElementById('mediaCaption').value = '';
+                    fileInput.value = '';
+                }
             } catch (e) {
                 showToast('Gagal mengirim media');
             }
+        }
+
+        async function sendBroadcast() {
+            const number = document.getElementById('broadcastBotSelect').value;
+            const message = document.getElementById('broadcastText').value;
+
+            if (!number || !message) return showToast('Pilih bot & isi pesan broadcast!');
+
+            showToast('Mengirim broadcast ke seluruh kontak...');
+            try {
+                const res = await fetch(`${API_BASE}/api/broadcast`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number, message })
+                });
+                const data = await res.json();
+                showToast(data.message);
+                if (data.status) document.getElementById('broadcastText').value = '';
+            } catch (e) {
+                showToast('Gagal mengirim broadcast');
+            }
+        }
+
+        // DATABASE STATUS & FULL BACKUP DOWNLOAD
+        async function fetchDbStatus() {
+            try {
+                const res = await fetch(`${API_BASE}/api/db-status`);
+                const data = await res.json();
+                if (data.status) {
+                    document.getElementById('dbUsersCount').innerText = data.stats.totalUsers || 0;
+                    document.getElementById('dbChatsCount').innerText = data.stats.totalChatFiles || 0;
+                }
+            } catch (e) {}
+        }
+
+        function downloadDbBackup() {
+            showToast('Mengunduh FULL Backup (Database & Sessions) .ZIP...');
+            window.location.href = `${API_BASE}/api/backup-db`;
+        }
+
+        // OTOMATISASI LIST RIWAYAT CHAT
+        async function fetchConversations() {
+            const container = document.getElementById('conversationListContainer');
+            try {
+                const res = await fetch(`${API_BASE}/api/chats/conversations`);
+                const data = await res.json();
+
+                if (data.status && data.conversations.length > 0) {
+                    container.innerHTML = data.conversations.map(c => `
+                        <div class="conversation-card" onclick="openChatDetail('${c.botNumber}', '${c.userJid}', '${c.userName}')">
+                            <div>
+                                <div style="font-weight:700; font-size:0.8rem; color:#0f172a;">
+                                    ${c.userName} ${c.isZack ? '<span style="color:#9333ea; font-size:0.65rem;">[Zack ❤️]</span>' : ''}
+                                </div>
+                                <div style="font-size:0.68rem; color:#64748b; margin-top:2px;">
+                                    ${c.lastContent.substring(0, 35)}...
+                                </div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:0.6rem; color:#94a3b8;">${new Date(c.lastTimestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                                <div style="font-size:0.65rem; color:#2563eb; font-weight:700; margin-top:2px;"><i class="fa-solid fa-comments"></i> ${c.totalMessages} msg</div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="text-align:center; color:#64748b; padding:12px; font-size:0.75rem;">Belum ada riwayat percakapan.</div>';
+                }
+            } catch (e) {
+                container.innerHTML = '<div style="text-align:center; color:#dc2626; padding:10px; font-size:0.75rem;">Gagal memuat riwayat.</div>';
+            }
+        }
+
+        async function openChatDetail(botNumber, userJid, userName) {
+            activeOpenedBot = botNumber;
+            activeOpenedUser = userJid;
+
+            const detailBox = document.getElementById('chatDetailBox');
+            const detailTitle = document.getElementById('chatDetailTitle');
+            const container = document.getElementById('chatDetailContainer');
+            const btnDelete = document.getElementById('btnDeleteChatHist');
+
+            detailBox.style.display = 'block';
+            detailTitle.innerHTML = `<i class="fa-solid fa-message"></i> ${userName} (${userJid})`;
+            btnDelete.onclick = () => deleteChatHistory(botNumber, userJid);
+
+            container.innerHTML = '<div style="text-align:center; color:#64748b; padding:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat chat...</div>';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/chats?botNumber=${botNumber}&userJid=${userJid}`);
+                const data = await res.json();
+
+                if (data.status && data.chats.length > 0) {
+                    container.innerHTML = data.chats.map(chat => `
+                        <div class="chat-item ${chat.role}">
+                            <div class="chat-header">
+                                <span class="chat-user">${chat.userName}</span>
+                                <span>${new Date(chat.timestamp).toLocaleTimeString()}</span>
+                            </div>
+                            <div class="chat-body">${chat.content}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="text-align:center; color:#64748b; padding:10px;">Tidak ada riwayat chat.</div>';
+                }
+            } catch (e) {
+                container.innerHTML = '<div style="text-align:center; color:#dc2626; padding:10px;">Gagal mengambil detail chat.</div>';
+            }
+        }
+
+        async function deleteChatHistory(botNumber, userJid) {
+            if (!confirm(`Hapus riwayat chat ini?`)) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/chats?botNumber=${botNumber}&userJid=${userJid}`, { method: 'DELETE' });
+                const data = await res.json();
+                showToast(data.message);
+                closeChatDetail();
+                fetchConversations();
+            } catch (e) {
+                showToast('Gagal menghapus riwayat chat');
+            }
+        }
+
+        function closeChatDetail() {
+            document.getElementById('chatDetailBox').style.display = 'none';
+        }
+
+        async function fetchFactsList() {
+            try {
+                const res = await fetch(`${API_BASE}/api/facts`);
+                const data = await res.json();
+                const container = document.getElementById('factsListContainer');
+
+                if (data.status && data.facts.length > 0) {
+                    container.innerHTML = data.facts.map(f => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f1f5f9;">
+                            <div>
+                                <span style="font-weight:700; font-size:0.75rem; color:#2563eb;">${f.factKey}</span>
+                                <div style="font-size:0.7rem; color:#334155;">${f.factValue}</div>
+                            </div>
+                            <button class="btn btn-danger" style="width:auto; padding:4px 8px; font-size:0.6rem;" onclick="deleteFact('${f.factKey}')">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="text-align:center; color:#64748b; font-size:0.75rem;">Belum ada memori terdaftar.</div>';
+                }
+            } catch (e) {}
         }
 
         async function saveFact() {
@@ -885,28 +1257,23 @@
                 });
                 const data = await res.json();
                 showToast(data.message);
+                document.getElementById('factKey').value = '';
+                document.getElementById('factVal').value = '';
+                fetchFactsList();
             } catch (e) {
                 showToast('Gagal menyimpan memori');
             }
         }
 
-        async function toggleBlock(action) {
-            const number = document.getElementById('blockBot').value;
-            const targetJid = document.getElementById('blockTarget').value;
-
-            if (!number || !targetJid) return showToast('Isi nomor bot & target!');
-
-            const endpoint = action === 'block' ? '/api/block' : '/api/unblock';
+        async function deleteFact(key) {
+            if (!confirm(`Hapus fakta '${key}'?`)) return;
             try {
-                const res = await fetch(`${API_BASE}${endpoint}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ number, targetJid })
-                });
+                const res = await fetch(`${API_BASE}/api/facts/${encodeURIComponent(key)}`, { method: 'DELETE' });
                 const data = await res.json();
                 showToast(data.message);
+                fetchFactsList();
             } catch (e) {
-                showToast('Gagal melakukan aksi blokir');
+                showToast('Gagal menghapus fakta');
             }
         }
 
@@ -915,55 +1282,30 @@
                 const res = await fetch(`${API_BASE}/api/contacts`);
                 const data = await res.json();
                 const container = document.getElementById('contactListContainer');
-
                 if (data.status && data.contacts.length > 0) {
                     container.innerHTML = data.contacts.map(c => `
-                        <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f3f4f6;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f1f5f9;">
                             <div>
-                                <span style="color:#111827; font-weight:700;">${c.pushName}</span> 
+                                <span style="font-weight:700; color:#0f172a;">${c.pushName}</span> 
                                 ${c.isZack ? '<span style="color:#9333ea; font-size:0.65rem;">[Zack ❤️]</span>' : ''}
-                                <div style="color:#6b7280; font-size:0.65rem;">${c.number}</div>
+                                <div style="color:#64748b; font-size:0.65rem;">${c.number}</div>
                             </div>
-                            <div style="font-size:0.6rem; color:#9ca3af;">${new Date(c.lastSeen).toLocaleDateString()}</div>
+                            <button class="btn btn-secondary" style="width:auto; padding:4px 8px; font-size:0.62rem;" onclick="quickSelectTarget('${c.number}')">
+                                <i class="fa-solid fa-paper-plane"></i> Kirim
+                            </button>
                         </div>
                     `).join('');
                 } else {
-                    container.innerHTML = '<div style="text-align:center; color:#6b7280; padding:10px;">Belum ada kontak tersimpan.</div>';
+                    container.innerHTML = '<div style="text-align:center; color:#64748b; padding:10px;">Belum ada kontak tersimpan.</div>';
                 }
-            } catch (e) {
-                showToast('Gagal memuat kontak');
-            }
+            } catch (e) {}
         }
 
-        async function fetchUserChatHistory() {
-            const botNum = document.getElementById('chatSearchBot').value;
-            const userNum = document.getElementById('chatSearchUser').value;
-            const container = document.getElementById('userChatHistoryContainer');
-
-            if (!botNum || !userNum) return showToast('Isi nomor bot dan nomor user!');
-
-            container.innerHTML = '<div style="text-align:center; color:#6b7280; padding:10px;">Mencari riwayat...</div>';
-
-            try {
-                const res = await fetch(`${API_BASE}/api/chats?botNumber=${botNum}&userJid=${userNum}`);
-                const data = await res.json();
-
-                if (data.status && data.chats.length > 0) {
-                    container.innerHTML = data.chats.map(chat => `
-                        <div class="chat-item ${chat.role}">
-                            <div class="chat-header">
-                                <span class="chat-user">${chat.userName}</span>
-                                <span>${new Date(chat.timestamp).toLocaleTimeString()}</span>
-                            </div>
-                            <div class="chat-body">${chat.content}</div>
-                        </div>
-                    `).join('');
-                } else {
-                    container.innerHTML = '<div style="text-align:center; color:#6b7280; padding:10px;">Tidak ada riwayat chat ditemukan.</div>';
-                }
-            } catch (e) {
-                showToast('Gagal mencari riwayat chat');
-            }
+        function quickSelectTarget(num) {
+            document.getElementById('sendMsgTarget').value = num;
+            document.getElementById('mediaTarget').value = num;
+            switchTab(3);
+            showToast(`Target dipilih: ${num}`);
         }
 
         checkAPIStatus();
