@@ -1,34 +1,3 @@
-Berikut adalah pembaruan lengkap untuk Backend Server (index.js) dan Frontend
-Web Control (index.html).
-
-🌟 Ringkasan Pembaruan & Fitur Baru:
-
-1.  Custom Owner & Nama Owner Per-Bot:
-      - Setiap bot dapat memiliki nomor Owner dan Nama Owner khusus sendiri
-        (misalnya: Bot A milik "Zack", Bot B milik "Mas Alex").
-      - AI akan memanggil nama owner sesuai settingan spesifik bot tersebut.
-2.  Pengaturan Auto-Read & Rutinitas Harian Khusus Per-Bot:
-      - Fitur Auto Read dan Notifikasi Rutinitas harian kini bisa
-        dihidupkan/dimatikan spesifik per bot.
-3.  Upload & Restore Backup Data (.ZIP):
-      - Fitur baru untuk mengunggah file .zip backup (yang berisi Database dan
-        sessions). File akan otomatis diekstrak dan memulihkan seluruh data
-        chat, memori, serta sesi WhatsApp sebelumnya secara instan.
-4.  AI Self-Learning & Pembelajaran Percakapan:
-      - AI memanfaatkan riwayat pesan terdahulu untuk "mengingat" dan
-        mempelajari topik, kebiasaan, serta gaya interaksi user agar respon
-        semakin alami, akrab, dan manusiawi.
-5.  Penyesuaian Karakter AI (Aisyah AI):
-      - Bukan Cuek Lagi: AI untuk user umum diubah menjadi ramah, hangat,
-        netral, dan akrab seperti manusia biasa.
-      - Identitas Aisyah AI: Jika user menanyakan "kamu siapa?", "siapa
-        namamu?", atau sejenisnya, AI akan menjawab secara ramah bahwa namanya
-        adalah Aisyah AI.
-
-1. File Backend Server API (index.js)
-
-Gantikan seluruh file index.js Anda dengan kode berikut:
-
 const dns = require('dns');
 try {
     dns.setServers(['8.8.8.8', '1.1.1.1']);

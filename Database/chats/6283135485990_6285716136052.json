@@ -1,0 +1,132 @@
+[
+  {
+    "id": "1785398432119",
+    "botNumber": "6283135485990",
+    "userJid": "6285716136052@s.whatsapp.net",
+    "userName": "Dadodado",
+    "isZack": false,
+    "role": "user",
+    "content": "Nn",
+    "timestamp": "2026-07-30T08:00:32.119Z"
+  },
+  {
+    "id": "1785398439489",
+    "botNumber": "6283135485990",
+    "userJid": "6285716136052@s.whatsapp.net",
+    "userName": "Dadodado",
+    "isZack": false,
+    "role": "assistant",
+    "content": "Ada apa?",
+    "timestamp": "2026-07-30T08:00:39.489Z"
+  },
+  {
+    "id": "1785398459647",
+    "botNumber": "6283135485990",
+    "userJid": "6285716136052@s.whatsapp.net",
+    "userName": "Dadodado",
+    "isZack": false,
+    "role": "user",
+    "content": "g makasih aku lg mager",
+    "timestamp": "2026-07-30T08:00:59.647Z"
+  },
+  {
+    "id": "1785398467334",
+    "botNumber": "6283135485990",
+    "userJid": "6285716136052@s.whatsapp.net",
+    "userName": "Dadodado",
+    "isZack": false,
+    "role": "assistant",
+    "content": "Oke.",
+    "timestamp": "2026-07-30T08:01:07.334Z"
+  },
+  {
+    "id": "1785398469093",
+    "botNumber": "6283135485990",
+    "userJid": "6285716136052@s.whatsapp.net",
+    "userName": "Dadodado",
+    "isZack": false,
+    "role": "user",
+    "content": "So bi banget nya aing",
+    "timestamp": "2026-07-30T08:01:09.093Z"
+  },
+  {
+    "id": "1785398480472",
+    "botNumber": "6283135485990",
+    "userJid": "6285716136052@s.whatsapp.net",
+    "userName": "Dadodado",
+    "isZack": false,
+    "role": "assistant",
+    "content": "Oke.",
+    "timestamp": "2026-07-30T08:01:20.472Z"
+  },
+  {
+    "id": "1785398582683",
+    "botNumber": "6283135485990",
+    "userJid": "6285716136052@s.whatsapp.net",
+    "userName": "Dadodado",
+    "isZack": false,
+    "role": "user",
+    "content": "lah sejak kapan si elang boga hp",
+    "timestamp": "2026-07-30T08:03:02.683Z"
+  },
+  {
+    "id": "1785398603225",
+    "botNumber": "6283135485990",
+    "userJid": "6285716136052@s.whatsapp.net",
+    "userName": "Dadodado",
+    "isZack": false,
+    "role": "assistant",
+    "content": "Ada perlu apa ya?",
+    "timestamp": "2026-07-30T08:03:23.225Z"
+  },
+  {
+    "id": "1785398623922",
+    "botNumber": "6283135485990",
+    "userJid": "6285716136052@s.whatsapp.net",
+    "userName": "Dadodado",
+    "isZack": false,
+    "role": "user",
+    "content": "najis ngetik Nn boa te kaharti aing",
+    "timestamp": "2026-07-30T08:03:43.922Z"
+  },
+  {
+    "id": "1785398631449",
+    "botNumber": "6283135485990",
+    "userJid": "6285716136052@s.whatsapp.net",
+    "userName": "Dadodado",
+    "isZack": false,
+    "role": "assistant",
+    "content": "Ada apa?",
+    "timestamp": "2026-07-30T08:03:51.449Z"
+  },
+  {
+    "id": "1785398638695",
+    "botNumber": "6283135485990",
+    "userJid": "6285716136052@s.whatsapp.net",
+    "userName": "Dadodado",
+    "isZack": false,
+    "role": "user",
+    "content": "Terserah Lo lah",
+    "timestamp": "2026-07-30T08:03:58.695Z"
+  },
+  {
+    "id": "1785398646839",
+    "botNumber": "6283135485990",
+    "userJid": "6285716136052@s.whatsapp.net",
+    "userName": "Dadodado",
+    "isZack": false,
+    "role": "assistant",
+    "content": "Baik.",
+    "timestamp": "2026-07-30T08:04:06.840Z"
+  },
+  {
+    "id": "1785399525060",
+    "botNumber": "6283135485990",
+    "userJid": "6285716136052@s.whatsapp.net",
+    "userName": "API Admin",
+    "isZack": false,
+    "role": "assistant",
+    "content": "Dado kamu lagi dimana",
+    "timestamp": "2026-07-30T08:18:45.060Z"
+  }
+]

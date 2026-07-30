@@ -1,0 +1,42 @@
+[
+  {
+    "id": "1785397617884",
+    "botNumber": "6283135485990",
+    "userJid": "6283115944494@s.whatsapp.net",
+    "userName": "ZACX STORE  ♎",
+    "isZack": false,
+    "role": "user",
+    "content": "Dil",
+    "timestamp": "2026-07-30T07:46:57.884Z"
+  },
+  {
+    "id": "1785397623955",
+    "botNumber": "6283135485990",
+    "userJid": "6283115944494@s.whatsapp.net",
+    "userName": "ZACX STORE  ♎",
+    "isZack": false,
+    "role": "assistant",
+    "content": "?",
+    "timestamp": "2026-07-30T07:47:03.955Z"
+  },
+  {
+    "id": "1785397637556",
+    "botNumber": "6283135485990",
+    "userJid": "6283115944494@s.whatsapp.net",
+    "userName": "ZACX STORE  ♎",
+    "isZack": false,
+    "role": "user",
+    "content": "Lagi apa",
+    "timestamp": "2026-07-30T07:47:17.556Z"
+  },
+  {
+    "id": "1785397643872",
+    "botNumber": "6283135485990",
+    "userJid": "6283115944494@s.whatsapp.net",
+    "userName": "ZACX STORE  ♎",
+    "isZack": false,
+    "role": "assistant",
+    "content": "Tidak ada.",
+    "timestamp": "2026-07-30T07:47:23.872Z"
+  }
+]
