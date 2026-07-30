@@ -21,11 +21,15 @@ const {
     fetchLatestWaWebVersion 
 } = require('baileys');
 
-const ZACK_NUMBER = '`6283110390167@s.whatsapp.net';
+// Nomor Utama Zack
+const ZACK_NUMBER = '6283110390167@s.whatsapp.net';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const upload = multer({ dest: 'uploads/' });
+
+// Global AutoRead State
+global.autoRead = false;
 
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -47,11 +51,11 @@ app.use((err, req, res, next) => {
 });
 
 const SESSIONS_DIR = path.join(__dirname, 'sessions');
-const DB_FILE = path.join(__dirname, 'database.json');
 const DB_DIR = path.join(__dirname, 'Database');
 const CHATS_DIR = path.join(DB_DIR, 'chats');
 const USERS_DIR = path.join(DB_DIR, 'users');
 const FACTS_DIR = path.join(DB_DIR, 'facts');
+const OWNER_FILE = path.join(DB_DIR, 'owner.json');
 
 const sessions = new Map();
 const msgRetryCounterCache = new Map();
@@ -62,6 +66,10 @@ if (!fs.existsSync(CHATS_DIR)) fs.mkdirSync(CHATS_DIR, { recursive: true });
 if (!fs.existsSync(USERS_DIR)) fs.mkdirSync(USERS_DIR, { recursive: true });
 if (!fs.existsSync(FACTS_DIR)) fs.mkdirSync(FACTS_DIR, { recursive: true });
 
+if (!fs.existsSync(OWNER_FILE)) {
+    fs.writeFileSync(OWNER_FILE, JSON.stringify([getCleanJid(ZACK_NUMBER)], null, 2));
+}
+
 const routineTypes = [
     { time: '05:00', id: 'bangun_pagi_dan_olahraga' },
     { time: '07:00', id: 'sarapan_pagi' },
@@ -71,17 +79,63 @@ const routineTypes = [
     { time: '22:00', id: 'tidur_malam' }
 ];
 
+// Pembersih JID / Nomor HP
 function getCleanJid(jid) {
-    return jid.split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
+    if (!jid) return '';
+    return String(jid).split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
 }
 
-function isZackUser(userJid) {
-    const cleanUserNum = getCleanJid(userJid);
-    const cleanZackNum = getCleanJid(ZACK_NUMBER);
-    return cleanUserNum === cleanZackNum;
+// Ambil semua daftar nomor Owner
+function getOwnerList() {
+    let list = [getCleanJid(ZACK_NUMBER)];
+    if (fs.existsSync(OWNER_FILE)) {
+        try {
+            const saved = JSON.parse(fs.readFileSync(OWNER_FILE, 'utf-8'));
+            if (Array.isArray(saved)) {
+                list = list.concat(saved.map(getCleanJid));
+            }
+        } catch (e) {}
+    }
+    return [...new Set(list.filter(Boolean))];
 }
 
-function saveUserChatMessage(botNumber, userJid, userName, role, content) {
+// FIX UTAMA: Pengecekan Zack Tingkat Lanjut (Nomor + LID + PushName)
+function isZackUser(userJid, msgOrName = null) {
+    const owners = getOwnerList();
+
+    // 1. Kumpulkan semua kandidat JID (termasuk LID & remoteJidAlt dari Baileys)
+    let candidates = [userJid];
+    let pushName = '';
+
+    if (msgOrName && typeof msgOrName === 'object') {
+        candidates.push(
+            msgOrName.key?.remoteJid,
+            msgOrName.key?.remoteJidAlt,
+            msgOrName.key?.participant,
+            msgOrName.key?.participantAlt,
+            msgOrName.sender,
+            msgOrName.participant
+        );
+        pushName = msgOrName.pushName || msgOrName.verifiedBizName || '';
+    } else if (typeof msgOrName === 'string') {
+        pushName = msgOrName;
+    }
+
+    const cleanCandidates = candidates.filter(Boolean).map(getCleanJid);
+
+    // 2. Cek apakah ada nomor kandidat yang cocok dengan list Owner
+    const matchNumber = cleanCandidates.some(num => num && owners.includes(num));
+    if (matchNumber) return true;
+
+    // 3. Fallback: Cek nama WhatsApp (Jika nama mengandung 'Zack')
+    if (pushName && pushName.toLowerCase().includes('zack')) {
+        return true;
+    }
+
+    return false;
+}
+
+function saveUserChatMessage(botNumber, userJid, userName, role, content, isZack = false) {
     const cleanNum = getCleanJid(userJid);
     const filePath = path.join(CHATS_DIR, `${botNumber}_${cleanNum}.json`);
     let list = [];
@@ -99,6 +153,7 @@ function saveUserChatMessage(botNumber, userJid, userName, role, content) {
         botNumber,
         userJid,
         userName,
+        isZack, // Simpan status Zack langsung di JSON log
         role,
         content,
         timestamp: new Date()
@@ -290,33 +345,42 @@ Jangan ramah dan jangan perhatian. Jika ditanya hal tidak penting, jawab 'Ada pe
         : "Ada perlu apa ya?";
 }
 
+// FIX: Handler Pesan Masuk
 async function handleIncomingMessage(botNumber, sock, msg) {
     try {
         if (!msg.message || msg.key.fromMe) return;
-        const from = msg.key.remoteJid;
-        if (from.endsWith('@g.us')) return;
+
+        // Ambil JID Asli (Prioritas: remoteJidAlt dari Baileys jika remoteJid berupa LID)
+        const from = msg.key.remoteJidAlt || msg.key.remoteJid;
+        if (!from || from.endsWith('@g.us') || from === 'status@broadcast') return;
+
+        if (global.autoRead) {
+            try { await sock.readMessages([msg.key]); } catch (e) {}
+        }
 
         const pushname = msg.pushName || msg.verifiedBizName || "No Name";
-        const text = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
+        const text = msg.message.conversation || 
+                     msg.message.extendedTextMessage?.text || 
+                     msg.message.imageMessage?.caption || 
+                     msg.message.videoMessage?.caption || '';
+
         if (!text.trim()) return;
 
-        const isZack = isZackUser(from);
+        // FIX: Evaluasi Deteksi Zack yang Komprehensif
+        const isZack = isZackUser(from, msg);
 
         saveUserProfile(from, pushname, isZack);
-
-        saveUserChatMessage(botNumber, from, pushname, 'user', text);
+        saveUserChatMessage(botNumber, from, pushname, 'user', text, isZack);
 
         await sock.sendPresenceUpdate('composing', from);
-
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         const aiReply = await getAIResponseWithHistory(botNumber, from, pushname, text, isZack);
 
         await sock.sendPresenceUpdate('paused', from);
+        saveUserChatMessage(botNumber, from, pushname, 'assistant', aiReply, isZack);
 
-        saveUserChatMessage(botNumber, from, pushname, 'assistant', aiReply);
-
-        await sock.sendMessage(from, { text: aiReply });
+        await sock.sendMessage(from, { text: aiReply }, { quoted: msg });
     } catch (err) {
         console.error('[ERROR MESSAGE HANDLER]', err.message);
     }
@@ -479,6 +543,43 @@ app.get('/', (req, res) => {
     } else {
         res.send('Server API Berjalan. File index.html tidak ditemukan.');
     }
+});
+
+// API Autoread & Owner
+app.get('/api/autoread', (req, res) => {
+    res.json({ status: true, autoRead: global.autoRead });
+});
+
+app.post('/api/autoread', (req, res) => {
+    const { enable } = req.body;
+    global.autoRead = Boolean(enable);
+    res.json({ status: true, message: `AutoRead diubah menjadi: ${global.autoRead ? 'ON' : 'OFF'}` });
+});
+
+app.get('/api/owner', (req, res) => {
+    res.json({ status: true, owners: getOwnerList() });
+});
+
+app.post('/api/owner', (req, res) => {
+    const { number } = req.body;
+    if (!number) return res.status(400).json({ status: false, message: 'Parameter number wajib diisi.' });
+
+    const clean = getCleanJid(number);
+    let owners = getOwnerList();
+
+    if (!owners.includes(clean)) {
+        owners.push(clean);
+        fs.writeFileSync(OWNER_FILE, JSON.stringify(owners, null, 2));
+        return res.json({ status: true, message: `Nomor ${clean} berhasil ditambahkan sebagai Owner/Zack!` });
+    }
+    res.json({ status: false, message: 'Nomor sudah terdaftar sebagai Owner.' });
+});
+
+app.delete('/api/owner/:number', (req, res) => {
+    const clean = getCleanJid(req.params.number);
+    let owners = getOwnerList().filter(num => num !== clean);
+    fs.writeFileSync(OWNER_FILE, JSON.stringify(owners, null, 2));
+    res.json({ status: true, message: `Nomor ${clean} berhasil dihapus dari daftar Owner.` });
 });
 
 app.all('/api/test-ai', async (req, res) => {
@@ -701,7 +802,8 @@ app.post('/api/send-message', async (req, res) => {
         const formattedJid = targetJid.includes('@') ? targetJid : getCleanJid(targetJid) + '@s.whatsapp.net';
         await session.sock.sendMessage(formattedJid, { text: message });
 
-        saveUserChatMessage(cleanNum, formattedJid, 'API Admin', 'assistant', message);
+        const isTargetZack = isZackUser(formattedJid);
+        saveUserChatMessage(cleanNum, formattedJid, 'API Admin', 'assistant', message, isTargetZack);
 
         return res.json({ status: true, message: 'Pesan berhasil terkirim.' });
     } catch (err) {
@@ -740,7 +842,8 @@ app.post('/api/send-media', async (req, res) => {
 
         await session.sock.sendMessage(formattedJid, mediaPayload);
 
-        saveUserChatMessage(cleanNum, formattedJid, 'API Admin', 'assistant', `[MEDIA: ${type.toUpperCase()}] ${caption || mediaUrl}`);
+        const isTargetZack = isZackUser(formattedJid);
+        saveUserChatMessage(cleanNum, formattedJid, 'API Admin', 'assistant', `[MEDIA: ${type.toUpperCase()}] ${caption || mediaUrl}`, isTargetZack);
 
         return res.json({ status: true, message: `Media ${type} berhasil dikirim.` });
     } catch (err) {
@@ -758,7 +861,7 @@ app.get('/api/contacts', async (req, res) => {
                 jid: c.jid,
                 number: getCleanJid(c.jid),
                 pushName: c.pushName,
-                isZack: c.isZack,
+                isZack: isZackUser(c.jid, c.pushName),
                 lastSeen: c.lastSeen
             }))
         });
@@ -781,6 +884,7 @@ app.post('/api/facts', async (req, res) => {
     }
 });
 
+// FIX: Endpoint Monitoring
 app.get('/api/monitoring', async (req, res) => {
     try {
         const recentLogs = getAllRecentLogs(50);
@@ -803,7 +907,8 @@ app.get('/api/monitoring', async (req, res) => {
                 botNumber: log.botNumber,
                 userJid: log.userJid,
                 userName: log.userName,
-                isZack: isZackUser(log.userJid),
+                // Gunakan status isZack tersimpan atau evaluasi fallback nama
+                isZack: log.isZack !== undefined ? log.isZack : isZackUser(log.userJid, log.userName),
                 role: log.role,
                 content: log.content,
                 timestamp: log.timestamp

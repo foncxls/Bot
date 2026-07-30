@@ -1,0 +1,56 @@
+[
+  {
+    "id": "1785380579010",
+    "botNumber": "6283115944494",
+    "userJid": "115857464262887@lid",
+    "userName": "Zack Rylsen",
+    "role": "user",
+    "content": "Hi",
+    "timestamp": "2026-07-30T03:02:59.010Z"
+  },
+  {
+    "id": "1785380585660",
+    "botNumber": "6283115944494",
+    "userJid": "115857464262887@lid",
+    "userName": "Zack Rylsen",
+    "role": "assistant",
+    "content": "Ada perlu apa ya?",
+    "timestamp": "2026-07-30T03:03:05.660Z"
+  },
+  {
+    "id": "1785380630001",
+    "botNumber": "6283115944494",
+    "userJid": "115857464262887@lid",
+    "userName": "Zack Rylsen",
+    "role": "user",
+    "content": "Aku siapa",
+    "timestamp": "2026-07-30T03:03:50.002Z"
+  },
+  {
+    "id": "1785380636174",
+    "botNumber": "6283115944494",
+    "userJid": "115857464262887@lid",
+    "userName": "Zack Rylsen",
+    "role": "assistant",
+    "content": "Ada perlu apa ya?",
+    "timestamp": "2026-07-30T03:03:56.174Z"
+  },
+  {
+    "id": "1785380645548",
+    "botNumber": "6283115944494",
+    "userJid": "115857464262887@lid",
+    "userName": "Zack Rylsen",
+    "role": "user",
+    "content": "Aku siapa coba",
+    "timestamp": "2026-07-30T03:04:05.548Z"
+  },
+  {
+    "id": "1785380653672",
+    "botNumber": "6283115944494",
+    "userJid": "115857464262887@lid",
+    "userName": "Zack Rylsen",
+    "role": "assistant",
+    "content": "Ada perlu apa ya?",
+    "timestamp": "2026-07-30T03:04:13.672Z"
+  }
+]
