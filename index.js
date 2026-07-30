@@ -21,7 +21,7 @@ const {
     fetchLatestWaWebVersion 
 } = require('baileys');
 
-const ZACK_NUMBER = '6283110390167';
+const ZACK_NUMBER = '`6283110390167@s.whatsapp.net';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
