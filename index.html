@@ -487,13 +487,12 @@
 </head>
 <body>
 
-    <!-- Header Navigation Mobile -->
     <header>
         <div class="header-left">
             <button class="burger-btn" onclick="toggleDrawer()">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <h1><i class="fa-solid fa-microchip"></i> Zack Control</h1>
+            <h1>Zack Bot Control</h1>
         </div>
         <div class="api-badge" id="apiStatusBadge">
             <div class="pulse-dot"></div>
@@ -501,7 +500,6 @@
         </div>
     </header>
 
-    <!-- Side Drawer Menu -->
     <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
     <div class="drawer" id="drawer">
         <div class="drawer-header">
@@ -509,15 +507,14 @@
             <button class="drawer-close" onclick="toggleDrawer()"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <ul class="drawer-menu">
-            <li class="active" onclick="switchTab(0)"><i class="fa-solid fa-chart-line"></i> Dashboard & Log</li>
-            <li onclick="switchTab(1)"><i class="fa-solid fa-sliders"></i> Pengaturan Khusus Bot</li>
-            <li onclick="switchTab(2)"><i class="fa-solid fa-qrcode"></i> Pairing & Bot Active</li>
-            <li onclick="switchTab(3)"><i class="fa-solid fa-paper-plane"></i> Kirim Pesan & Media</li>
-            <li onclick="switchTab(4)"><i class="fa-solid fa-database"></i> Backup & Restore Data</li>
+            <li class="active" onclick="switchTab(0)"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
+            <li onclick="switchTab(1)"><i class="fa-solid fa-sliders"></i> Pengaturan Bot</li>
+            <li onclick="switchTab(2)"><i class="fa-solid fa-qrcode"></i> Activity Bot</li>
+            <li onclick="switchTab(3)"><i class="fa-solid fa-paper-plane"></i> Send Messages</li>
+            <li onclick="switchTab(4)"><i class="fa-solid fa-database"></i> Database</li>
         </ul>
     </div>
 
-    <!-- PAGE 0: DASHBOARD -->
     <div class="page-section active" id="sec-0">
         <div class="stats-grid">
             <div class="stat-box">
@@ -533,16 +530,16 @@
         </div>
 
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-brain"></i> Tes Respon AI (Aisyah AI / Zack)</div>
+            <div class="card-title"><i class="fa-solid fa-brain"></i> Tes Respon AI</div>
             <div class="form-group">
                 <label><i class="fa-solid fa-message"></i> Pesan Tes</label>
                 <input type="text" id="testAiMsg" class="form-control" placeholder="Contoh: Kamu siapa?">
             </div>
             <div class="form-group">
-                <label><i class="fa-solid fa-user-tag"></i> Perlakuan Sender</label>
+                <label><i class="fa-solid fa-user-tag"></i> Perlakuan Ai</label>
                 <select id="testAiRole" class="form-control">
-                    <option value="false">Sebagai Orang Lain (Aisyah AI - Ramah & Netral)</option>
-                    <option value="true">Sebagai Owner (Aisyah - Pacar Manis)</option>
+                    <option value="false">Sebagai Orang Lain</option>
+                    <option value="true">Sebagai Owner</option>
                 </select>
             </div>
             <button class="btn" onclick="runTestAi()"><i class="fa-solid fa-vial"></i> Tes Respon AI</button>
@@ -550,18 +547,16 @@
         </div>
 
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-desktop"></i> Live Monitoring Chat (Rinci)</div>
+            <div class="card-title"><i class="fa-solid fa-desktop"></i> Live Monitoring Chat</div>
             <div class="chat-list" id="monitoringLogs">
                 <div style="text-align:center; font-size:0.75rem; color:#64748b; padding:15px;">Memuat data...</div>
             </div>
         </div>
     </div>
 
-    <!-- PAGE 1: PENGATURAN KHUSUS BOT & OWNER -->
     <div class="page-section" id="sec-1">
-        <!-- PENGATURAN SPESIFIK BOT -->
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-sliders"></i> Custom Pengaturan Bot Spesifik</div>
+            <div class="card-title"><i class="fa-solid fa-sliders"></i> Pengaturan Bot Spesifik</div>
             <div class="form-group">
                 <label><i class="fa-solid fa-robot"></i> Pilih Bot Yang Diatur</label>
                 <select id="configBotSelect" class="form-control" onchange="loadSpecificBotConfig()">
@@ -573,33 +568,33 @@
                 <input type="number" id="botOwnerNum" class="form-control" placeholder="628123456789">
             </div>
             <div class="form-group">
-                <label><i class="fa-solid fa-signature"></i> Custom Nama Owner (Dipanggil AI)</label>
-                <input type="text" id="botOwnerName" class="form-control" placeholder="Contoh: Zack / Mas Alex">
+                <label><i class="fa-solid fa-signature"></i> Custom Nama Owner</label>
+                <input type="text" id="botOwnerName" class="form-control" placeholder="Contoh: Zack / Alex">
             </div>
             <div class="form-group">
-                <label><i class="fa-solid fa-check-double"></i> Auto Read Pesan Bot Ini</label>
+                <label><i class="fa-solid fa-check-double"></i> Auto Read</label>
                 <select id="botAutoReadSelect" class="form-control">
-                    <option value="false">OFF (Matikan AutoRead)</option>
-                    <option value="true">ON (Aktifkan AutoRead)</option>
+                    <option value="false">OFF</option>
+                    <option value="true">ON</option>
                 </select>
             </div>
             <div class="form-group">
                 <label><i class="fa-solid fa-clock"></i> Notifikasi Rutinitas Harian Bot Ini</label>
                 <select id="botRoutineSelect" class="form-control">
-                    <option value="true">ON (Kirim Rutinitas Harian AI)</option>
-                    <option value="false">OFF (Matikan Rutinitas Harian)</option>
+                    <option value="true">ON</option>
+                    <option value="false">OFF</option>
                 </select>
             </div>
             <button class="btn" onclick="saveBotSpecificConfig()"><i class="fa-solid fa-floppy-disk"></i> Simpan Pengaturan Bot</button>
         </div>
 
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-user-shield"></i> Daftar Owner Global (Admin)</div>
+            <div class="card-title"><i class="fa-solid fa-user-shield"></i> Daftar Owner</div>
             <div class="form-group">
-                <label><i class="fa-solid fa-phone"></i> Tambah Nomor Owner Admin Baru</label>
+                <label><i class="fa-solid fa-phone"></i> Tambah Nomor Owner</label>
                 <input type="number" id="newOwnerNum" class="form-control" placeholder="628123456789">
             </div>
-            <button class="btn" onclick="addOwner()"><i class="fa-solid fa-user-plus"></i> Tambah Owner Global</button>
+            <button class="btn" onclick="addOwner()"><i class="fa-solid fa-user-plus"></i> Tambah Owner</button>
             
             <div style="margin-top:12px;" id="ownerListContainer">
                 <div style="text-align:center; font-size:0.75rem; color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat daftar owner...</div>
@@ -622,7 +617,6 @@
         </div>
     </div>
 
-    <!-- PAGE 2: PAIRING & BOTS -->
     <div class="page-section" id="sec-2">
         <div class="card">
             <div class="card-title"><i class="fa-solid fa-qrcode"></i> Generate Pairing Code</div>
@@ -635,7 +629,6 @@
             <div class="pairing-box" id="pairingBox">
                 <div style="font-size:0.68rem; color:#64748b; font-weight:700;">KODE PAIRING ANDA</div>
                 <div class="pairing-code" id="pairingCodeVal">----</div>
-                <div style="font-size:0.65rem; color:#64748b;">Masukkan kode ini di WhatsApp HP Anda</div>
             </div>
         </div>
 
@@ -649,18 +642,17 @@
                 <label><i class="fa-solid fa-file-zipper"></i> File Sesi (.ZIP)</label>
                 <input type="file" id="zipFile" accept=".zip" class="form-control">
             </div>
-            <button class="btn" onclick="uploadZipSession()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload & Ekstrak</button>
+            <button class="btn" onclick="uploadZipSession()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
         </div>
 
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-plug"></i> Daftar Bot Terhubung & Download Sesi</div>
+            <div class="card-title"><i class="fa-solid fa-plug"></i> Daftar Bot Terhubung</div>
             <div id="botListContainer">
                 <div style="text-align:center; font-size:0.75rem; color:#64748b; padding:15px;">Belum ada bot.</div>
             </div>
         </div>
     </div>
 
-    <!-- PAGE 3: KIRIM PESAN & MEDIA -->
     <div class="page-section" id="sec-3">
         <div class="card">
             <div class="card-title"><i class="fa-solid fa-paper-plane"></i> Kirim Pesan Teks</div>
@@ -682,7 +674,7 @@
         </div>
 
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-photo-film"></i> Kirim Media (Upload File Langsung)</div>
+            <div class="card-title"><i class="fa-solid fa-photo-film"></i> Kirim Media</div>
             <div class="form-group">
                 <label><i class="fa-solid fa-robot"></i> Pilih Bot Pengirim</label>
                 <select id="mediaBotSelect" class="form-control">
@@ -696,10 +688,10 @@
             <div class="form-group">
                 <label><i class="fa-solid fa-icons"></i> Tipe Media</label>
                 <select id="mediaType" class="form-control">
-                    <option value="image">Gambar (Image)</option>
+                    <option value="image">Gambar</option>
                     <option value="video">Video</option>
-                    <option value="audio">Audio / Voice Note</option>
-                    <option value="document">Dokumen / File</option>
+                    <option value="audio">Audio</option>
+                    <option value="document">Dokumen</option>
                 </select>
             </div>
             <div class="form-group">
@@ -710,40 +702,38 @@
                 <label><i class="fa-solid fa-closed-captioning"></i> Caption / Description</label>
                 <input type="text" id="mediaCaption" class="form-control" placeholder="Keterangan file...">
             </div>
-            <button class="btn" onclick="sendMediaMessage()"><i class="fa-solid fa-share-nodes"></i> Upload & Kirim Media</button>
+            <button class="btn" onclick="sendMediaMessage()"><i class="fa-solid fa-share-nodes"></i>Kirim Media</button>
         </div>
     </div>
 
-    <!-- PAGE 4: DATABASE & BACKUP/RESTORE DATA -->
     <div class="page-section" id="sec-4">
-        <!-- FITUR BARU: BACKUP & RESTORE BACKUP .ZIP -->
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-server"></i> Cek, Backup & Restore Full Data</div>
+            <div class="card-title"><i class="fa-solid fa-server"></i> DATABASE</div>
             <div class="stats-grid" style="margin-bottom:12px;">
                 <div class="stat-box">
                     <i class="fa-solid fa-users"></i>
                     <div class="number" id="dbUsersCount">0</div>
-                    <div class="label">USER DATABASE</div>
+                    <div class="label">USER</div>
                 </div>
                 <div class="stat-box">
                     <i class="fa-solid fa-file-code"></i>
                     <div class="number" id="dbChatsCount">0</div>
-                    <div class="label">FILE CHAT</div>
+                    <div class="label">CHAT</div>
                 </div>
             </div>
-            <button class="btn btn-success" style="margin-bottom:10px;" onclick="downloadDbBackup()"><i class="fa-solid fa-file-zipper"></i> Download Full Backup (.ZIP)</button>
+            <button class="btn btn-success" style="margin-bottom:10px;" onclick="downloadDbBackup()"><i class="fa-solid fa-file-zipper"></i> Download Database</button>
             
             <div style="border-top:1px solid #f1f5f9; padding-top:10px; margin-top:10px;">
                 <div class="form-group">
-                    <label><i class="fa-solid fa-upload"></i> Upload & Restore File Backup (.ZIP)</label>
+                    <label><i class="fa-solid fa-upload"></i> Restore File Backup</label>
                     <input type="file" id="restoreBackupZipFile" accept=".zip" class="form-control">
                 </div>
-                <button class="btn btn-secondary" onclick="uploadRestoreBackup()"><i class="fa-solid fa-rotate-left"></i> Restore Data Dari Backup</button>
+                <button class="btn btn-secondary" onclick="uploadRestoreBackup()"><i class="fa-solid fa-rotate-left"></i> Restore Data Backup</button>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-comments"></i> Riwayat Chat (Klik untuk Detail)</div>
+            <div class="card-title"><i class="fa-solid fa-comments"></i> Riwayat Chat</div>
             <div id="conversationListContainer">
                 <div style="text-align:center; font-size:0.75rem; color:#64748b; padding:15px;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat daftar percakapan...</div>
             </div>
@@ -767,10 +757,10 @@
                 <input type="text" id="factKey" class="form-control" placeholder="Contoh: Makanan Favorit">
             </div>
             <div class="form-group">
-                <label><i class="fa-solid fa-quote-left"></i> Isi Fakta (Value)</label>
+                <label><i class="fa-solid fa-quote-left"></i> Isi Fakta</label>
                 <input type="text" id="factVal" class="form-control" placeholder="Contoh: Nasi Goreng Pedas">
             </div>
-            <button class="btn" onclick="saveFact()"><i class="fa-solid fa-floppy-disk"></i> Simpan Memori AI</button>
+            <button class="btn" onclick="saveFact()"><i class="fa-solid fa-floppy-disk"></i> Simpan Memori</button>
             
             <div style="margin-top:12px;" id="factsListContainer">
                 <div style="text-align:center; font-size:0.75rem; color:#64748b;">Memuat memori...</div>
@@ -889,7 +879,6 @@
             }
         }
 
-        // LOAD & SAVE CUSTOM CONFIG KHUSUS PER BOT
         async function loadSpecificBotConfig() {
             const botNumber = document.getElementById('configBotSelect').value;
             if (!botNumber) return;
@@ -1167,7 +1156,6 @@
             window.location.href = `${API_BASE}/api/backup-db`;
         }
 
-        // FITUR BARU: UPLOAD & RESTORE BACKUP DATA
         async function uploadRestoreBackup() {
             const fileInput = document.getElementById('restoreBackupZipFile');
             if (fileInput.files.length === 0) return showToast('Pilih file backup (.zip) terlebih dahulu!');
