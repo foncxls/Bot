@@ -97,7 +97,7 @@ function getCleanJid(jid) {
     return String(jid).split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
 }
 
-// FIX: Buka Pembungkus Pesan Ephemeral (Pesan Sementara) / ViewOnce
+// Buka Pembungkus Pesan Ephemeral / ViewOnce
 function unwrapMessage(msg) {
     if (!msg) return null;
     let m = msg.message || msg;
@@ -108,7 +108,7 @@ function unwrapMessage(msg) {
     return m;
 }
 
-// FIX: Ambil Semua Identitas JID Bot (Nomor HP + LID WhatsApp)
+// Ambil Identitas JID Bot (Nomor HP + LID)
 function getBotJidCandidates(sock, botNumber) {
     const candidates = [];
     if (botNumber) candidates.push(getCleanJid(botNumber));
@@ -117,7 +117,7 @@ function getBotJidCandidates(sock, botNumber) {
     return [...new Set(candidates.filter(Boolean))];
 }
 
-// FIX: Ekstrak ContextInfo dari Semua Tipe Pesan (Untuk Reply & Mention)
+// Ekstrak ContextInfo
 function getContextInfo(msg) {
     const m = unwrapMessage(msg);
     if (!m) return null;
@@ -140,7 +140,7 @@ function formatUptime(seconds) {
     return `${d > 0 ? d + ' hari ' : ''}${h} jam ${m} menit ${s} detik`;
 }
 
-// Tracking Terakhir Zack Chat di Grup (24 Jam Check)
+// Tracking Zack di Grup
 function getZackGroupLastSeen() {
     try {
         if (!fs.existsSync(ZACK_LAST_SEEN_FILE)) return {};
@@ -154,14 +154,12 @@ function updateZackGroupLastSeen(groupId) {
     fs.writeFileSync(ZACK_LAST_SEEN_FILE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
-// Konfigurasi Spesifik Per Bot
+// Config Bot
 function getAllBotConfigs() {
     try {
         if (!fs.existsSync(BOT_CONFIGS_FILE)) return {};
         return JSON.parse(fs.readFileSync(BOT_CONFIGS_FILE, 'utf-8'));
-    } catch (e) {
-        return {};
-    }
+    } catch (e) { return {}; }
 }
 
 function getBotConfig(botNumber) {
@@ -172,7 +170,7 @@ function getBotConfig(botNumber) {
         ownerName: 'Zack',
         autoRead: false,
         routineEnabled: true,
-        groupResponseMode: 'trigger_only', // 'off', 'trigger_only', 'selected_groups', 'all'
+        groupResponseMode: 'trigger_only',
         enabledGroups: []
     };
 }
@@ -187,7 +185,6 @@ function saveBotConfig(botNumber, newConfig) {
     fs.writeFileSync(BOT_CONFIGS_FILE, JSON.stringify(configs, null, 2), 'utf-8');
 }
 
-// Daftar Owner Global
 function getGlobalOwnerList() {
     let list = [getCleanJid(ZACK_NUMBER)];
     if (fs.existsSync(OWNER_FILE)) {
@@ -201,7 +198,6 @@ function getGlobalOwnerList() {
     return [...new Set(list.filter(Boolean))];
 }
 
-// Pengecekan Owner
 function isZackUser(userJid, msgOrName = null, botNumber = null) {
     const globalOwners = getGlobalOwnerList();
     let botOwner = null;
@@ -248,9 +244,7 @@ function saveUserChatMessage(botNumber, userJid, userName, role, content, isZack
     if (fs.existsSync(filePath)) {
         try {
             list = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-        } catch (e) {
-            list = [];
-        }
+        } catch (e) { list = []; }
     }
 
     list.push({
@@ -277,9 +271,7 @@ function getUserChats(botNumber, userJid, limit = 50) {
     try {
         const list = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
         return list.slice(-limit);
-    } catch (e) {
-        return [];
-    }
+    } catch (e) { return []; }
 }
 
 function getAllRecentLogs(limit = 50) {
@@ -330,16 +322,16 @@ function getAllContacts() {
     return contacts;
 }
 
+// FIX BUG MEMORI FAKTA (Simpan & Ambil Aman)
 function saveFact(factKey, factValue) {
+    if (!fs.existsSync(FACTS_DIR)) fs.mkdirSync(FACTS_DIR, { recursive: true });
     const filePath = path.join(FACTS_DIR, 'facts.json');
     let facts = {};
 
     if (fs.existsSync(filePath)) {
         try {
-            facts = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-        } catch (e) {
-            facts = {};
-        }
+            facts = JSON.parse(fs.readFileSync(filePath, 'utf-8')) || {};
+        } catch (e) { facts = {}; }
     }
 
     facts[factKey] = {
@@ -352,14 +344,13 @@ function saveFact(factKey, factValue) {
 }
 
 function getFacts() {
+    if (!fs.existsSync(FACTS_DIR)) fs.mkdirSync(FACTS_DIR, { recursive: true });
     const filePath = path.join(FACTS_DIR, 'facts.json');
     if (!fs.existsSync(filePath)) return {};
 
     try {
-        return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-    } catch (e) {
-        return {};
-    }
+        return JSON.parse(fs.readFileSync(filePath, 'utf-8')) || {};
+    } catch (e) { return {}; }
 }
 
 async function callAI(messages) {
@@ -394,56 +385,61 @@ async function generateAIRoutineMessage(routineId, ownerName = 'Zack') {
     const factsObj = getFacts();
     let memoryContext = Object.values(factsObj).map(f => `${f.factKey}: ${f.factValue}`).join(', ');
 
-    const systemPrompt = `Kamu adalah pacar cewek dari ${ownerName}. Kamu sangat mencintai ${ownerName}.
-Tugasmu: Buatkan pesan pengingat '${routineId}' untuk ${ownerName}.
-Konteks Fakta ${ownerName}: ${memoryContext || 'Tidak ada'}
-Aturan:
-- Gunakan bahasa Indonesia santai, sangat manis, perhatian, dan kreatif.
-- Panggil dia dengan '${ownerName} sayang' atau 'Sayang'.
-- Sertakan kalimat bervariasi, romantis, dan perhatian (2-3 kalimat).`;
+    const systemPrompt = `Kamu adalah pacar cewek dari ${ownerName}.
+Tugasmu: Ingatkan '${routineId}' untuk ${ownerName}.
+Fakta ${ownerName}: ${memoryContext || 'Tidak ada'}
+Aturan: Gunakan bahasa santai, manis, dan singkat (1-2 kalimat).`;
 
     const messages = [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Ingatkan ${ownerName} tentang ${routineId} sekarang secara manis!` }
+        { role: 'user', content: `Ingatkan ${ownerName} tentang ${routineId} sekarang!` }
     ];
 
     const aiMsg = await callAI(messages);
-    return aiMsg || `${ownerName} sayang, udah waktunya ${routineId.replace(/_/g, ' ')} nih! Jangan lupa ya manis, I love you!`;
+    return aiMsg || `${ownerName} sayang, udah waktunya ${routineId.replace(/_/g, ' ')} nih!`;
 }
 
-// AI PROMPT DENGAN SAMBUTAN 24 JAM ZACK DI GRUP
+// AI PROMPT PEMBALASAN TERAKURAT & DENGAN RESPON 1 BARIS + ADAPTASI EMOJI & STYLE USER
 async function getAIResponseWithHistory(botNumber, userJid, userName, userMessage, isZack, groupInfo = null, isZackAbsent1Day = false) {
     const recentChats = getUserChats(botNumber, userJid, 15);
     const botConfig = getBotConfig(botNumber);
     const ownerName = botConfig.ownerName || 'Zack';
 
-    let systemPrompt = '';
-    if (isZack) {
-        const factsObj = getFacts();
-        let memoryText = Object.values(factsObj).map(f => `${f.factKey}: ${f.factValue}`).join(', ');
+    // Data sistem real-time
+    const uptimeStr = formatUptime(process.uptime());
+    const activeSessions = Array.from(sessions.entries()).filter(([_, s]) => s.status === 'connected').map(([num]) => num);
+    const usersCount = fs.existsSync(USERS_DIR) ? fs.readdirSync(USERS_DIR).filter(f => f.endsWith('.json')).length : 0;
+    const chatsCount = fs.existsSync(CHATS_DIR) ? fs.readdirSync(CHATS_DIR).filter(f => f.endsWith('.json')).length : 0;
+    const factsObj = getFacts();
+    const factsCount = Object.keys(factsObj).length;
+    const memoryText = Object.values(factsObj).map(f => `${f.factKey}: ${f.factValue}`).join(', ');
+    const globalOwners = getGlobalOwnerList();
 
-        if (groupInfo) {
-            systemPrompt = `Kamu adalah Aisyah, pacar cewek penyayang dari ${ownerName}.
-Kamu berada di Grup "${groupInfo.groupName}". ${ownerName} (pacarmu) baru saja mengirim pesan di grup ini.
-Gaya bicara: Manis, perhatian, manja, dan hangat.
-${isZackAbsent1Day ? `PERHATIAN KHUSUS: ${ownerName} SUDAH LEBIH DARI 1 HARI KEMARIN TIDAK MUNCUL / CHAT DI GRUP INI! Sambut dia sangat manis dan kangen, tanyain "Kemana aja ${ownerName} sayang kok baru keliatan di grup hari ini?"` : ''}
-Aturan: Jawab secara manis dan ringkas.`;
-        } else {
-            systemPrompt = `Kamu adalah Aisyah, pacar cewek penyayang dari ${ownerName}.
-Gaya bicara: Sangat manis, perhatian, manja, hangat, dan penyayang. Panggil dia '${ownerName}', 'Sayang', atau 'Mas ${ownerName}'.
-Fakta Memori tentang ${ownerName}: ${memoryText || 'Belum ada memori terdaftar'}.
-Aturan: Jawablah dengan ringkas dan pas.`;
-        }
-    } else if (groupInfo) {
-        systemPrompt = `Kamu adalah Aisyah AI, asisten WhatsApp ramah di dalam Grup "${groupInfo.groupName}".
-Lawan bicaramu saat ini adalah ${userName}.
-Aturan Khusus Grup Chat:
-- Jawablah dengan ringkas, ramah, pas, dan langsung ke inti pertanyaan (1-3 kalimat).
-- Jika ditanya 'kamu siapa', jawab bahwa kamu adalah "Aisyah AI".`;
+    let systemPrompt = '';
+
+    if (isZack) {
+        systemPrompt = `Kamu adalah Aisyah, pacar cewek penyayang dari ${ownerName}.
+DATA SISTEM REAL-TIME (KHUSUS ${ownerName.toUpperCase()}):
+- Uptime Server: ${uptimeStr}
+- Bot Terhubung (${activeSessions.length}): ${activeSessions.join(', ') || 'Belum ada'}
+- User Terdaftar: ${usersCount}, File Chat: ${chatsCount}, Memori Fakta: ${factsCount}
+- Owner List: ${globalOwners.join(', ')}
+
+GAYA BICARA & ATURAN PENTING:
+- Manis, perhatian, manja, hangat, dan penyayang. Panggil dia '${ownerName}' atau 'Sayang'.
+- BISA AKSES DATA SISTEM: Jika ${ownerName} bertanya tentang runtime, status server, bot terhubung, database, atau owner, berikan jawabannya secara alami dan akurat berdasarkan data di atas!
+- SANGAT PENTING: Jawab SANGAT SINGKAT (CUKUP 1 BARIS). Dilarang panjang lebar/bejibun agar ${ownerName} tidak malas membaca!
+- ADAPTASI STYLE & EMOJI: Perhatikan gaya obrolan ${ownerName}. Jika dia menggunakan emoji, balaskan dengan emoji yang pas juga.
+- Memori Fakta: ${memoryText || 'Belum ada memori terdaftar'}.
+${groupInfo ? `Grup: "${groupInfo.groupName}". ${isZackAbsent1Day ? `PERHATIAN KHUSUS: ${ownerName} sudah lebih dari 1 hari kemarin tidak muncul di grup ini! Sambut dia sangat manis dan kangen, tanyain kemana aja.` : ''}` : ''}`;
     } else {
-        systemPrompt = `Kamu adalah Aisyah AI, asisten kecerdasan buatan ramah yang sedang berbicara dengan ${userName}.
-Gaya bicara: Netral, hangat, ramah, alami, dan sopan seperti manusia biasa.
-Jika ditanya 'kamu siapa?', JAWAB BAHWA NAMAMU ADALAH "Aisyah AI".`;
+        systemPrompt = `Kamu adalah Aisyah AI, asisten ramah yang sedang ngobrol dengan ${userName} ${groupInfo ? `di grup "${groupInfo.groupName}"` : ''}.
+GAYA BICARA & ATURAN PENTING:
+- Ramah, netral, santai, asik, seru, dan alami seperti manusia pada umumnya (BUKAN ROBOT/KUPAK).
+- SANGAT PENTING: Jawab SANGAT SINGKAT (CUKUP 1 BARIS SAJA). Dilarang panjang/bejibun agar user tidak malas membaca!
+- ADAPTASI STYLE & EMOJI: Pelajari gaya obrolan, kosa kata, dan penggunaan emoji dari ${userName} dari riwayat percakapan. Jika user menggunakan emoji, balaskan dengan emoji yang serupa/pas!
+- IDENTITAS: Jika ditanya 'kamu siapa?', 'siapa namamu?', 'siapa ini?', JAWAB BAHWA NAMAMU ADALAH "Aisyah AI".
+- RAHASIA SISTEM: JANGAN PERNAH memberikan data sensitif sistem (runtime, database, list bot/owner) kepada user biasa! Jika ditanya, alihkan dengan ramah.`;
     }
 
     const messages = [{ role: 'system', content: systemPrompt }];
@@ -461,16 +457,16 @@ Jika ditanya 'kamu siapa?', JAWAB BAHWA NAMAMU ADALAH "Aisyah AI".`;
     if (reply) return reply;
 
     return isZack 
-        ? `${ownerName} sayang, bentar ya manis, jaringan aku lagi agak lelet nih tapi aku tetep sayang kamu!` 
-        : `Halo ${userName}! Maaf ya jaringan Aisyah AI lagi agak lelet, ada yang bisa Aisyah bantu?`;
+        ? `${ownerName} sayang, bentar ya manis, jaringan aku lagi agak lelet nih!` 
+        : `Halo ${userName}! Maaf ya jaringan Aisyah AI lagi agak lelet.`;
 }
 
-// FIX AKURAT: Cek Apakah Bot Dipanggil / Di-Tag / Pesannya Di-Reply di Grup (Menggunakan LID + Nomor HP)
+// Cek Apakah Bot Dipanggil / Di-Tag / Pesannya Di-Reply di Grup
 function isBotTriggeredInGroup(sock, msg, text, botNumber) {
     const botCandidates = getBotJidCandidates(sock, botNumber);
     const contextInfo = getContextInfo(msg);
 
-    // 1. Cek Apakah Pesan Bot Dibalas (Reply / Quoted Message)
+    // 1. Reply ke pesan bot (Quoted Message)
     if (contextInfo && contextInfo.participant) {
         const cleanQuoted = getCleanJid(contextInfo.participant);
         if (botCandidates.includes(cleanQuoted)) {
@@ -503,7 +499,7 @@ async function handleIncomingMessage(botNumber, sock, msg) {
         const rawFrom = msg.key.remoteJid;
         const from = msg.key.remoteJidAlt || rawFrom;
 
-        // STRICT FIX: Abaikan Status WA & Channel/Newsletter
+        // Abaikan Status WA & Channel/Newsletter
         if (!from || from === 'status@broadcast' || rawFrom === 'status@broadcast' || from.endsWith('@newsletter')) return;
 
         const unwrapped = unwrapMessage(msg);
@@ -538,7 +534,6 @@ async function handleIncomingMessage(botNumber, sock, msg) {
                     return;
                 }
 
-                // Generasi Laporan Status via AI Khusus Zack
                 const uptimeStr = formatUptime(process.uptime());
                 const activeSessions = Array.from(sessions.entries()).filter(([_, s]) => s.status === 'connected').map(([num]) => num);
                 const usersCount = fs.existsSync(USERS_DIR) ? fs.readdirSync(USERS_DIR).filter(f => f.endsWith('.json')).length : 0;
@@ -547,22 +542,19 @@ async function handleIncomingMessage(botNumber, sock, msg) {
                 const timeStr = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
                 const systemPromptCommand = `Kamu adalah Aisyah AI. Zack (ownermu) memanggil command !${commandName}.
-Tugasmu: Buatkan laporan status runtime server dan database bot secara ramah, rapi, dan informatif untuk Zack.
+Tugasmu: Buatkan laporan status runtime server dan database bot secara ramah, rapi, manis, dan SINGKAT (1-2 BARIS) untuk Zack.
 Data Real-Time:
 - Uptime Server: ${uptimeStr}
 - Bot Terhubung (${activeSessions.length}): ${activeSessions.join(', ') || 'Tidak ada'}
-- User Terdaftar DB: ${usersCount}
-- File Chat Tersimpan: ${chatsCount}
-- Fakta Memori AI: ${factsCount}
-- Waktu Sekarang: ${timeStr}
-Sampaikan secara ringkas dan manis!`;
+- User DB: ${usersCount}, File Chat: ${chatsCount}, Memori Fakta: ${factsCount}
+- Waktu: ${timeStr}`;
 
                 const aiReplyCmd = await callAI([
                     { role: 'system', content: systemPromptCommand },
                     { role: 'user', content: `Laporkan status runtime bot sekarang!` }
                 ]);
 
-                await sock.sendMessage(from, { text: aiReplyCmd || `[RUNTIME BOT STATUS]\nUptime: ${uptimeStr}\nBot Aktif: ${activeSessions.length}\nDB Chat: ${chatsCount}` }, { quoted: msg });
+                await sock.sendMessage(from, { text: aiReplyCmd || `Status Bot Aktif (${activeSessions.length}): Uptime ${uptimeStr}, DB: ${chatsCount} chat.` }, { quoted: msg });
                 return;
             }
         }
@@ -578,10 +570,10 @@ Sampaikan secara ringkas dan manis!`;
 
             if (groupMode === 'selected_groups') {
                 const enabledGroups = botConfig.enabledGroups || [];
-                if (!enabledGroups.includes(from)) return; // Abaikan jika grup ini tidak diaktifkan
+                if (!enabledGroups.includes(from)) return;
             } else if (groupMode === 'trigger_only') {
                 const triggered = isBotTriggeredInGroup(sock, msg, text, botNumber);
-                if (!triggered) return; // Jika tidak di-reply/tag/dipanggil, diam.
+                if (!triggered) return;
             }
 
             try {
@@ -591,7 +583,6 @@ Sampaikan secara ringkas dan manis!`;
                 groupInfo = { groupId: from, groupName: 'Grup' };
             }
 
-            // Pengecekan 24 Jam Zack Tidak Chat di Grup Ini
             if (isZack) {
                 const lastSeenMap = getZackGroupLastSeen();
                 const lastSeenTime = lastSeenMap[from] || 0;
@@ -609,7 +600,7 @@ Sampaikan secara ringkas dan manis!`;
         saveUserChatMessage(botNumber, senderJid, `${pushname}${isGroup ? ` [${groupInfo.groupName}]` : ''}`, 'user', text, isZack);
 
         await sock.sendPresenceUpdate('composing', from);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
         const aiReply = await getAIResponseWithHistory(botNumber, senderJid, pushname, text, isZack, groupInfo, isZackAbsent1Day);
 
@@ -973,8 +964,23 @@ app.post('/api/broadcast', async (req, res) => {
     return res.json({ status: true, message: `Broadcast berhasil terkirim ke ${sentCount} kontak!` });
 });
 
+// GET & SAVE MEMORI FAKTA (FIXED BUG)
 app.get('/api/facts', (req, res) => {
     res.json({ status: true, facts: Object.values(getFacts()) });
+});
+
+app.post('/api/facts', (req, res) => {
+    const { factKey, factValue } = req.body;
+    if (!factKey || !factValue) {
+        return res.status(400).json({ status: false, message: 'Parameter factKey dan factValue wajib diisi.' });
+    }
+
+    try {
+        saveFact(factKey, factValue);
+        return res.json({ status: true, message: `Fakta memori '${factKey}' berhasil disimpan!` });
+    } catch (err) {
+        return res.status(500).json({ status: false, message: 'Gagal menyimpan fakta: ' + err.message });
+    }
 });
 
 app.delete('/api/facts/:key', (req, res) => {

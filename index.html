@@ -504,7 +504,7 @@
             <button class="burger-btn" onclick="toggleDrawer()">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <h1><i class="fa-solid fa-microchip"></i> Zack Bot Control</h1>
+            <h1>Zack Bot Control</h1>
         </div>
         <div class="api-badge" id="apiStatusBadge">
             <div class="pulse-dot"></div>
@@ -527,6 +527,7 @@
         </ul>
     </div>
 
+    <!-- TAB 0: DASHBOARD -->
     <div class="page-section active" id="sec-0">
         <div class="stats-grid">
             <div class="stat-box">
@@ -566,6 +567,7 @@
         </div>
     </div>
 
+    <!-- TAB 1: PENGATURAN BOT -->
     <div class="page-section" id="sec-1">
         <div class="card">
             <div class="card-title"><i class="fa-solid fa-sliders"></i> Pengaturan Bot Spesifik</div>
@@ -607,7 +609,7 @@
                 </select>
             </div>
 
-            <!-- AREA PILIH GRUP SPESIFIK BERDASARKAN NAMA GRUP -->
+            <!-- AREA PILIH GRUP SPESIFIK -->
             <div id="selectedGroupsArea" style="display:none; margin-bottom:12px; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
                 <label style="font-size:0.7rem; font-weight:700; color:#334155; margin-bottom:6px; display:block;">
                     <i class="fa-solid fa-people-group"></i> Pilih Grup Yang Diizinkan:
@@ -649,6 +651,7 @@
         </div>
     </div>
 
+    <!-- TAB 2: ACTIVITY BOT & PAIRING -->
     <div class="page-section" id="sec-2">
         <div class="card">
             <div class="card-title"><i class="fa-solid fa-qrcode"></i> Generate Pairing Code</div>
@@ -685,6 +688,7 @@
         </div>
     </div>
 
+    <!-- TAB 3: SEND MESSAGES -->
     <div class="page-section" id="sec-3">
         <div class="card">
             <div class="card-title"><i class="fa-solid fa-paper-plane"></i> Kirim Pesan Teks</div>
@@ -734,13 +738,14 @@
                 <label><i class="fa-solid fa-closed-captioning"></i> Caption / Description</label>
                 <input type="text" id="mediaCaption" class="form-control" placeholder="Keterangan file...">
             </div>
-            <button class="btn" onclick="sendMediaMessage()"><i class="fa-solid fa-share-nodes"></i>Kirim Media</button>
+            <button class="btn" onclick="sendMediaMessage()"><i class="fa-solid fa-share-nodes"></i> Kirim Media</button>
         </div>
     </div>
 
+    <!-- TAB 4: DATABASE -->
     <div class="page-section" id="sec-4">
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-server"></i> DATABASE & SESI STATUS</div>
+            <div class="card-title"><i class="fa-solid fa-server"></i> DATABASE</div>
             <div class="stats-grid" style="margin-bottom:12px;">
                 <div class="stat-box">
                     <i class="fa-solid fa-users"></i>
@@ -981,7 +986,6 @@
             const routineEnabled = document.getElementById('botRoutineSelect').value === 'true';
             const groupResponseMode = document.getElementById('botGroupModeSelect').value;
 
-            // Ambil grup yang di-check
             const enabledGroups = [];
             document.querySelectorAll('#groupListContainer input[type="checkbox"]:checked').forEach(cb => {
                 enabledGroups.push(cb.value);
