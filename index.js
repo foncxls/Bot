@@ -483,7 +483,7 @@ function isBotTriggeredInGroup(sock, msg, text, botNumber) {
     }
 
     // 3. Nama Aisyah / Aisyah AI / Bot dipanggil dalam teks
-    const namePattern = /\b(aisyah|aisyah ai|bot|zack bot)\b/i;
+    const namePattern = /\b(aisyah|aisyah ai)\b/i;
     if (namePattern.test(text)) {
         return true;
     }
