@@ -97,6 +97,40 @@ function getCleanJid(jid) {
     return String(jid).split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
 }
 
+// FIX: Buka Pembungkus Pesan Ephemeral (Pesan Sementara) / ViewOnce
+function unwrapMessage(msg) {
+    if (!msg) return null;
+    let m = msg.message || msg;
+    if (m?.ephemeralMessage?.message) m = m.ephemeralMessage.message;
+    if (m?.viewOnceMessage?.message) m = m.viewOnceMessage.message;
+    if (m?.viewOnceMessageV2?.message) m = m.viewOnceMessageV2.message;
+    if (m?.documentWithCaptionMessage?.message) m = m.documentWithCaptionMessage.message;
+    return m;
+}
+
+// FIX: Ambil Semua Identitas JID Bot (Nomor HP + LID WhatsApp)
+function getBotJidCandidates(sock, botNumber) {
+    const candidates = [];
+    if (botNumber) candidates.push(getCleanJid(botNumber));
+    if (sock?.user?.id) candidates.push(getCleanJid(sock.user.id));
+    if (sock?.user?.lid) candidates.push(getCleanJid(sock.user.lid));
+    return [...new Set(candidates.filter(Boolean))];
+}
+
+// FIX: Ekstrak ContextInfo dari Semua Tipe Pesan (Untuk Reply & Mention)
+function getContextInfo(msg) {
+    const m = unwrapMessage(msg);
+    if (!m) return null;
+    return m?.extendedTextMessage?.contextInfo ||
+           m?.imageMessage?.contextInfo ||
+           m?.videoMessage?.contextInfo ||
+           m?.audioMessage?.contextInfo ||
+           m?.documentMessage?.contextInfo ||
+           m?.stickerMessage?.contextInfo ||
+           m?.buttonsResponseMessage?.contextInfo ||
+           m?.listResponseMessage?.contextInfo || null;
+}
+
 // Format Uptime Server
 function formatUptime(seconds) {
     const d = Math.floor(seconds / (3600 * 24));
@@ -431,37 +465,25 @@ Jika ditanya 'kamu siapa?', JAWAB BAHWA NAMAMU ADALAH "Aisyah AI".`;
         : `Halo ${userName}! Maaf ya jaringan Aisyah AI lagi agak lelet, ada yang bisa Aisyah bantu?`;
 }
 
-// FIX: Helper Ekstrak ContextInfo (Termasuk Quoted Message / Reply)
-function getContextInfo(msg) {
-    const m = msg.message;
-    if (!m) return null;
-    return m.extendedTextMessage?.contextInfo ||
-           m.imageMessage?.contextInfo ||
-           m.videoMessage?.contextInfo ||
-           m.audioMessage?.contextInfo ||
-           m.documentMessage?.contextInfo ||
-           m.stickerMessage?.contextInfo ||
-           m.buttonsResponseMessage?.contextInfo ||
-           m.listResponseMessage?.contextInfo || null;
-}
-
-// FIX: Cek Apakah Bot Dipanggil / Di-Tag / Pesannya Di-Reply di Grup
+// FIX AKURAT: Cek Apakah Bot Dipanggil / Di-Tag / Pesannya Di-Reply di Grup (Menggunakan LID + Nomor HP)
 function isBotTriggeredInGroup(sock, msg, text, botNumber) {
-    const cleanBotNum = getCleanJid(botNumber);
+    const botCandidates = getBotJidCandidates(sock, botNumber);
     const contextInfo = getContextInfo(msg);
 
     // 1. Cek Apakah Pesan Bot Dibalas (Reply / Quoted Message)
     if (contextInfo && contextInfo.participant) {
-        if (getCleanJid(contextInfo.participant) === cleanBotNum) {
+        const cleanQuoted = getCleanJid(contextInfo.participant);
+        if (botCandidates.includes(cleanQuoted)) {
             return true;
         }
     }
 
     // 2. Mention / Tag bot (@bot)
     if (contextInfo && Array.isArray(contextInfo.mentionedJid)) {
-        if (contextInfo.mentionedJid.some(jid => getCleanJid(jid) === cleanBotNum)) {
-            return true;
-        }
+        const isMentioned = contextInfo.mentionedJid.some(jid => {
+            return botCandidates.includes(getCleanJid(jid));
+        });
+        if (isMentioned) return true;
     }
 
     // 3. Nama Aisyah / Aisyah AI / Bot dipanggil dalam teks
@@ -484,6 +506,9 @@ async function handleIncomingMessage(botNumber, sock, msg) {
         // STRICT FIX: Abaikan Status WA & Channel/Newsletter
         if (!from || from === 'status@broadcast' || rawFrom === 'status@broadcast' || from.endsWith('@newsletter')) return;
 
+        const unwrapped = unwrapMessage(msg);
+        if (!unwrapped) return;
+
         const isGroup = from.endsWith('@g.us');
         const botConfig = getBotConfig(botNumber);
 
@@ -493,10 +518,11 @@ async function handleIncomingMessage(botNumber, sock, msg) {
         }
 
         const pushname = msg.pushName || msg.verifiedBizName || "No Name";
-        const text = msg.message.conversation || 
-                     msg.message.extendedTextMessage?.text || 
-                     msg.message.imageMessage?.caption || 
-                     msg.message.videoMessage?.caption || '';
+        const text = unwrapped.conversation || 
+                     unwrapped.extendedTextMessage?.text || 
+                     unwrapped.imageMessage?.caption || 
+                     unwrapped.videoMessage?.caption || 
+                     unwrapped.documentMessage?.caption || '';
 
         if (!text.trim()) return;
 
@@ -757,7 +783,7 @@ app.get('/', (req, res) => {
     }
 });
 
-// FITUR BARU: API Ambil Daftar Grup Tempat Bot Bergabung (Dengan Nama Grup)
+// API Ambil Daftar Grup Tempat Bot Bergabung
 app.get('/api/bot-groups/:number', async (req, res) => {
     const cleanNum = getCleanJid(req.params.number);
     const session = sessions.get(cleanNum);
@@ -1341,4 +1367,3 @@ app.listen(PORT, async () => {
 
 process.on('uncaughtException', (err) => console.error('[UNCAUGHT EXCEPTION]', err));
 process.on('unhandledRejection', (err) => console.error('[UNHANDLED REJECTION]', err));
-
