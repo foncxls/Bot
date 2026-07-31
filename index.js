@@ -21,6 +21,7 @@ const {
     fetchLatestWaWebVersion 
 } = require('baileys');
 
+// Nomor Utama Zack Default
 const ZACK_NUMBER = '6283110390167@s.whatsapp.net';
 
 const app = express();
@@ -90,6 +91,7 @@ function getCleanJid(jid) {
     return String(jid).split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
 }
 
+// Manajemen Konfigurasi Spesifik Per Bot
 function getAllBotConfigs() {
     try {
         if (!fs.existsSync(BOT_CONFIGS_FILE)) return {};
@@ -106,7 +108,8 @@ function getBotConfig(botNumber) {
         ownerNumber: getCleanJid(ZACK_NUMBER),
         ownerName: 'Zack',
         autoRead: false,
-        routineEnabled: true
+        routineEnabled: true,
+        groupResponseMode: 'trigger_only' // Options: 'off', 'trigger_only', 'all'
     };
 }
 
@@ -120,6 +123,7 @@ function saveBotConfig(botNumber, newConfig) {
     fs.writeFileSync(BOT_CONFIGS_FILE, JSON.stringify(configs, null, 2), 'utf-8');
 }
 
+// Ambil daftar nomor Owner Global
 function getGlobalOwnerList() {
     let list = [getCleanJid(ZACK_NUMBER)];
     if (fs.existsSync(OWNER_FILE)) {
@@ -133,6 +137,7 @@ function getGlobalOwnerList() {
     return [...new Set(list.filter(Boolean))];
 }
 
+// Pengecekan Owner Per-Bot
 function isZackUser(userJid, msgOrName = null, botNumber = null) {
     const globalOwners = getGlobalOwnerList();
     let botOwner = null;
@@ -343,8 +348,9 @@ Aturan:
     return aiMsg || `${ownerName} sayang, udah waktunya ${routineId.replace(/_/g, ' ')} nih! Jangan lupa ya manis, I love you!`;
 }
 
-async function getAIResponseWithHistory(botNumber, userJid, userName, userMessage, isZack) {
-    const recentChats = getUserChats(botNumber, userJid, 15); // Ambil 15 riwayat terakhir untuk self-learning
+// AI PROMPT TER-UPDATE (Dengan Penyesuaian Grup & Self-Learning)
+async function getAIResponseWithHistory(botNumber, userJid, userName, userMessage, isZack, groupInfo = null) {
+    const recentChats = getUserChats(botNumber, userJid, 15);
     const botConfig = getBotConfig(botNumber);
     const ownerName = botConfig.ownerName || 'Zack';
 
@@ -357,15 +363,21 @@ async function getAIResponseWithHistory(botNumber, userJid, userName, userMessag
 Gaya bicara: Sangat manis, perhatian, manja, hangat, dan penyayang. Panggil dia '${ownerName}', 'Sayang', atau 'Mas ${ownerName}'.
 Gunakan ekspresi santai ("muach", "hehe", "iya sayang").
 Fakta Memori tentang ${ownerName}: ${memoryText || 'Belum ada memori terdaftar'}.
-Aturan Self-Learning: Pelajari topik dan gaya obrolan dari riwayat chat sebelumnya agar jawabanmu makin akrab dan natural.
+Aturan: Jawablah dengan ringkas dan pas. Pelajari dari riwayat chat agar obrolan makin akrab.
 Aturan Identitas: Jika ditanya siapa namamu, jawab namamu Aisyah pacar manisnya ${ownerName}.`;
+    } else if (groupInfo) {
+        systemPrompt = `Kamu adalah Aisyah AI, asisten WhatsApp ramah di dalam Grup "${groupInfo.groupName}".
+Lawan bicaramu di grup saat ini adalah ${userName}.
+Aturan Khusus Grup Chat:
+- Jawablah dengan ringkas, ramah, pas, dan langsung ke inti pertanyaan (1-3 kalimat).
+- Jangan menjawab bertele-tele dan menyesuaikan dengan apa yang dibutuhkan user di grup.
+- Jika ditanya 'kamu siapa' atau 'siapa ini', jawab secara ramah bahwa kamu adalah "Aisyah AI".`;
     } else {
         systemPrompt = `Kamu adalah Aisyah AI, asisten kecerdasan buatan ramah yang sedang berbicara dengan ${userName}.
-Gaya bicara: Netral, hangat, ramah, alami, dan sopan seperti manusia biasa. dan bicara nya jangan berlebihan cukup 1 baris atau berapa menyesuaikan dengan user yang chat, kamu tinggal ikutin aja
+Gaya bicara: Netral, hangat, ramah, alami, dan sopan seperti manusia biasa. Bicara ringkas dan menyesuaikan obrolan user.
 Aturan Penting Identitas:
-- Jika ditanya 'kamu siapa?', 'siapa namamu?', 'siapa ini?', atau pertanyaan identitas lainnya, JAWAB DENGAN JELAS DAN RAMAH BAHWA NAMAMU ADALAH "Aisyah AI".
-- Bersikaplah friendly, membantu, dan bangun hubungan obrolan yang akrab dan manusiawi.
-Aturan Self-Learning: Gunakan konteks dari riwayat pesan sebelumnya untuk memberikan jawaban yang makin pas, akurat, dan nyambung dengan obrolan user.`;
+- Jika ditanya 'kamu siapa?', 'siapa namamu?', 'siapa ini?', JAWAB BAHWA NAMAMU ADALAH "Aisyah AI".
+- Bersikaplah friendly, membantu, dan bangun hubungan obrolan yang akrab dan manusiawi.`;
     }
 
     const messages = [{ role: 'system', content: systemPrompt }];
@@ -387,15 +399,41 @@ Aturan Self-Learning: Gunakan konteks dari riwayat pesan sebelumnya untuk member
         : `Halo ${userName}! Maaf ya jaringan Aisyah AI lagi agak lelet, ada yang bisa Aisyah bantu?`;
 }
 
+// Cek Apakah Bot Dipanggil / Di-Mention / Di-Reply di Grup
+function isBotTriggeredInGroup(sock, msg, text, botNumber) {
+    const cleanBotNum = getCleanJid(botNumber);
+
+    // 1. Reply ke pesan bot
+    const quotedParticipant = msg.message?.extendedTextMessage?.contextInfo?.participant || '';
+    if (getCleanJid(quotedParticipant) === cleanBotNum) return true;
+
+    // 2. Mention / Tag bot (@bot)
+    const mentionedJids = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
+    const isMentioned = mentionedJids.some(jid => getCleanJid(jid) === cleanBotNum);
+    if (isMentioned) return true;
+
+    // 3. Nama Aisyah / Aisyah AI / Bot dipanggil dalam teks
+    const namePattern = /\b(aisyah|aisyah ai|bot)\b/i;
+    if (namePattern.test(text)) return true;
+
+    return false;
+}
+
+// FIX UTAMA: Handler Pesan Masuk (Strict Status Broadcast Ignored)
 async function handleIncomingMessage(botNumber, sock, msg) {
     try {
         if (!msg.message || msg.key.fromMe) return;
 
-        const from = msg.key.remoteJidAlt || msg.key.remoteJid;
-        if (!from || from.endsWith('@g.us') || from === 'status@broadcast') return;
+        const rawFrom = msg.key.remoteJid;
+        const from = msg.key.remoteJidAlt || rawFrom;
 
+        // CRITICAL FIX: Abaikan Status WhatsApp (status@broadcast) & Channel/Newsletter
+        if (!from || from === 'status@broadcast' || rawFrom === 'status@broadcast' || from.endsWith('@newsletter')) return;
+
+        const isGroup = from.endsWith('@g.us');
         const botConfig = getBotConfig(botNumber);
 
+        // AutoRead
         if (botConfig.autoRead) {
             try { await sock.readMessages([msg.key]); } catch (e) {}
         }
@@ -408,18 +446,41 @@ async function handleIncomingMessage(botNumber, sock, msg) {
 
         if (!text.trim()) return;
 
-        const isZack = isZackUser(from, msg, botNumber);
+        // Pengecekan Khusus Grup
+        let groupInfo = null;
+        if (isGroup) {
+            const groupMode = botConfig.groupResponseMode || 'trigger_only'; // 'off', 'trigger_only', 'all'
+            if (groupMode === 'off') return;
 
-        saveUserProfile(from, pushname, isZack);
-        saveUserChatMessage(botNumber, from, pushname, 'user', text, isZack);
+            if (groupMode === 'trigger_only') {
+                const triggered = isBotTriggeredInGroup(sock, msg, text, botNumber);
+                if (!triggered) return; // Jika tidak di-mention/dipanggil, diam.
+            }
+
+            try {
+                const metadata = await sock.groupMetadata(from).catch(() => ({}));
+                groupInfo = {
+                    groupId: from,
+                    groupName: metadata.subject || 'Grup'
+                };
+            } catch (e) {
+                groupInfo = { groupId: from, groupName: 'Grup' };
+            }
+        }
+
+        const senderJid = msg.key.participantAlt || msg.key.participant || msg.participant || msg.sender || from;
+        const isZack = isZackUser(senderJid, msg, botNumber);
+
+        saveUserProfile(senderJid, pushname, isZack);
+        saveUserChatMessage(botNumber, senderJid, `${pushname}${isGroup ? ` [${groupInfo.groupName}]` : ''}`, 'user', text, isZack);
 
         await sock.sendPresenceUpdate('composing', from);
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
-        const aiReply = await getAIResponseWithHistory(botNumber, from, pushname, text, isZack);
+        const aiReply = await getAIResponseWithHistory(botNumber, senderJid, pushname, text, isZack, groupInfo);
 
         await sock.sendPresenceUpdate('paused', from);
-        saveUserChatMessage(botNumber, from, pushname, 'assistant', aiReply, isZack);
+        saveUserChatMessage(botNumber, senderJid, `${pushname}${isGroup ? ` [${groupInfo.groupName}]` : ''}`, 'assistant', aiReply, isZack);
 
         await sock.sendMessage(from, { text: aiReply }, { quoted: msg });
     } catch (err) {
@@ -551,7 +612,6 @@ setInterval(async () => {
 
             for (const [number, session] of sessions.entries()) {
                 const config = getBotConfig(number);
-                // Hanya kirim jika Notifikasi Rutinitas diaktifkan untuk bot ini
                 if (config.routineEnabled !== false && session.status === 'connected' && session.sock) {
                     try {
                         const dynamicMessage = await generateAIRoutineMessage(routine.id, config.ownerName || 'Zack');
@@ -589,14 +649,14 @@ app.get('/', (req, res) => {
     }
 });
 
-
+// API Get & Save Konfigurasi Khusus Per-Bot
 app.get('/api/bot-config/:number', (req, res) => {
     const number = getCleanJid(req.params.number);
     res.json({ status: true, config: getBotConfig(number) });
 });
 
 app.post('/api/bot-config', (req, res) => {
-    const { number, ownerNumber, ownerName, autoRead, routineEnabled } = req.body;
+    const { number, ownerNumber, ownerName, autoRead, routineEnabled, groupResponseMode } = req.body;
     if (!number) return res.status(400).json({ status: false, message: 'Parameter number wajib diisi.' });
 
     const cleanNum = getCleanJid(number);
@@ -604,7 +664,8 @@ app.post('/api/bot-config', (req, res) => {
         ownerNumber: ownerNumber ? getCleanJid(ownerNumber) : getBotConfig(cleanNum).ownerNumber,
         ownerName: ownerName || getBotConfig(cleanNum).ownerName,
         autoRead: autoRead !== undefined ? Boolean(autoRead) : getBotConfig(cleanNum).autoRead,
-        routineEnabled: routineEnabled !== undefined ? Boolean(routineEnabled) : getBotConfig(cleanNum).routineEnabled
+        routineEnabled: routineEnabled !== undefined ? Boolean(routineEnabled) : getBotConfig(cleanNum).routineEnabled,
+        groupResponseMode: groupResponseMode || getBotConfig(cleanNum).groupResponseMode || 'trigger_only'
     });
 
     if (sessions.has(cleanNum)) {
@@ -615,6 +676,7 @@ app.post('/api/bot-config', (req, res) => {
     res.json({ status: true, message: `Pengaturan khusus untuk bot ${cleanNum} berhasil disimpan!` });
 });
 
+// FITUR RESTORE BACKUP .ZIP DATA (Database & Sessions)
 app.post('/api/restore-backup', upload.single('backupZip'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ status: false, message: 'Pilih file backup .zip yang akan di-restore.' });
@@ -622,7 +684,6 @@ app.post('/api/restore-backup', upload.single('backupZip'), async (req, res) => 
 
     try {
         const zip = new AdmZip(req.file.path);
-        
         zip.extractAllTo(__dirname, true);
 
         if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
@@ -636,6 +697,7 @@ app.post('/api/restore-backup', upload.single('backupZip'), async (req, res) => 
     }
 });
 
+// API Download FULL Backup (.ZIP Database + Folder Sessions)
 app.get('/api/backup-db', async (req, res) => {
     try {
         const zip = new AdmZip();
@@ -654,6 +716,7 @@ app.get('/api/backup-db', async (req, res) => {
     }
 });
 
+// API Download Single Session Per Bot (.ZIP)
 app.get('/api/bot/download-session/:number', async (req, res) => {
     const cleanNum = getCleanJid(req.params.number);
     const sessionPath = path.join(SESSIONS_DIR, cleanNum);
@@ -676,6 +739,7 @@ app.get('/api/bot/download-session/:number', async (req, res) => {
     }
 });
 
+// API Send Media (Direct File Upload via Multer ATAU URL)
 app.post('/api/send-media', upload.single('mediaFile'), async (req, res) => {
     const { number, targetJid, type, caption, fileName, ptt, mediaUrl } = req.body;
 
@@ -732,6 +796,7 @@ app.post('/api/send-media', upload.single('mediaFile'), async (req, res) => {
     }
 });
 
+// API Broadcast Pesan ke Semua Kontak
 app.post('/api/broadcast', async (req, res) => {
     const { number, message } = req.body;
     if (!number || !message) return res.status(400).json({ status: false, message: 'Parameter number dan message wajib diisi.' });
@@ -987,6 +1052,7 @@ app.get('/api/bots', async (req, res) => {
             status: session.status,
             ownerName: cfg.ownerName || 'Zack',
             ownerNumber: cfg.ownerNumber || ZACK_NUMBER,
+            groupResponseMode: cfg.groupResponseMode || 'trigger_only',
             createdAt: session.createdAt
         });
     }

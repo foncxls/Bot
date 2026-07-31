@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -530,7 +532,7 @@
         </div>
 
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-brain"></i> Tes Respon AI</div>
+            <div class="card-title"><i class="fa-solid fa-brain"></i> Tes Respon AI (Aisyah AI / Owner)</div>
             <div class="form-group">
                 <label><i class="fa-solid fa-message"></i> Pesan Tes</label>
                 <input type="text" id="testAiMsg" class="form-control" placeholder="Contoh: Kamu siapa?">
@@ -538,8 +540,8 @@
             <div class="form-group">
                 <label><i class="fa-solid fa-user-tag"></i> Perlakuan Ai</label>
                 <select id="testAiRole" class="form-control">
-                    <option value="false">Sebagai Orang Lain</option>
-                    <option value="true">Sebagai Owner</option>
+                    <option value="false">Sebagai Orang Lain (Aisyah AI - Ramah & Netral)</option>
+                    <option value="true">Sebagai Owner (Aisyah - Pacar Manis)</option>
                 </select>
             </div>
             <button class="btn" onclick="runTestAi()"><i class="fa-solid fa-vial"></i> Tes Respon AI</button>
@@ -583,6 +585,15 @@
                 <select id="botRoutineSelect" class="form-control">
                     <option value="true">ON</option>
                     <option value="false">OFF</option>
+                </select>
+            </div>
+            <!-- TAMBAHAN: MODE RESPON GRUP -->
+            <div class="form-group">
+                <label><i class="fa-solid fa-users-gear"></i> Mode Respon Grup Chat</label>
+                <select id="botGroupModeSelect" class="form-control">
+                    <option value="trigger_only">Hanya Dipanggil / Tag / Reply (Trigger Only)</option>
+                    <option value="off">Matikan di Grup (OFF)</option>
+                    <option value="all">Respon Semua Pesan Grup (ALL)</option>
                 </select>
             </div>
             <button class="btn" onclick="saveBotSpecificConfig()"><i class="fa-solid fa-floppy-disk"></i> Simpan Pengaturan Bot</button>
@@ -891,6 +902,7 @@
                     document.getElementById('botOwnerName').value = data.config.ownerName || 'Zack';
                     document.getElementById('botAutoReadSelect').value = String(data.config.autoRead || false);
                     document.getElementById('botRoutineSelect').value = String(data.config.routineEnabled !== false);
+                    document.getElementById('botGroupModeSelect').value = data.config.groupResponseMode || 'trigger_only';
                 }
             } catch (e) {
                 showToast('Gagal memuat pengaturan bot');
@@ -903,6 +915,7 @@
             const ownerName = document.getElementById('botOwnerName').value;
             const autoRead = document.getElementById('botAutoReadSelect').value === 'true';
             const routineEnabled = document.getElementById('botRoutineSelect').value === 'true';
+            const groupResponseMode = document.getElementById('botGroupModeSelect').value;
 
             if (!number) return showToast('Pilih bot terlebih dahulu!');
 
@@ -910,7 +923,7 @@
                 const res = await fetch(`${API_BASE}/api/bot-config`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ number, ownerNumber, ownerName, autoRead, routineEnabled })
+                    body: JSON.stringify({ number, ownerNumber, ownerName, autoRead, routineEnabled, groupResponseMode })
                 });
                 const data = await res.json();
                 showToast(data.message);
@@ -1014,7 +1027,7 @@
                         <div class="bot-card">
                             <div>
                                 <div style="font-weight:700; font-size:0.8rem;"><i class="fa-solid fa-robot" style="color:#2563eb;"></i> ${bot.number}</div>
-                                <div style="font-size:0.65rem; color:#64748b;">Owner: <b>${bot.ownerName}</b> (${bot.ownerNumber}) | Status: <span style="color:#16a34a; font-weight:700;">${bot.status}</span></div>
+                                <div style="font-size:0.65rem; color:#64748b;">Owner: <b>${bot.ownerName}</b> | Grup: <b>${bot.groupResponseMode}</b></div>
                             </div>
                             <div style="display:flex; gap:6px;">
                                 <a href="${API_BASE}/api/bot/download-session/${bot.number}" class="btn btn-secondary" style="width:auto; padding:6px 10px; font-size:0.7rem;" title="Download Sesi ZIP">
