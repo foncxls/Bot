@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -463,6 +461,18 @@
             margin-bottom: 8px;
         }
 
+        .group-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.75rem;
+        }
+
         .toast {
             position: fixed;
             top: 15px;
@@ -494,7 +504,7 @@
             <button class="burger-btn" onclick="toggleDrawer()">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <h1>Zack Bot Control</h1>
+            <h1><i class="fa-solid fa-microchip"></i> Zack Bot Control</h1>
         </div>
         <div class="api-badge" id="apiStatusBadge">
             <div class="pulse-dot"></div>
@@ -587,15 +597,26 @@
                     <option value="false">OFF</option>
                 </select>
             </div>
-            <!-- TAMBAHAN: MODE RESPON GRUP -->
             <div class="form-group">
                 <label><i class="fa-solid fa-users-gear"></i> Mode Respon Grup Chat</label>
-                <select id="botGroupModeSelect" class="form-control">
+                <select id="botGroupModeSelect" class="form-control" onchange="toggleGroupListVisibility()">
                     <option value="trigger_only">Hanya Dipanggil / Tag / Reply (Trigger Only)</option>
-                    <option value="off">Matikan di Grup (OFF)</option>
+                    <option value="selected_groups">Hanya Grup Pilihan Tertentu</option>
                     <option value="all">Respon Semua Pesan Grup (ALL)</option>
+                    <option value="off">Matikan di Grup (OFF)</option>
                 </select>
             </div>
+
+            <!-- AREA PILIH GRUP SPESIFIK BERDASARKAN NAMA GRUP -->
+            <div id="selectedGroupsArea" style="display:none; margin-bottom:12px; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                <label style="font-size:0.7rem; font-weight:700; color:#334155; margin-bottom:6px; display:block;">
+                    <i class="fa-solid fa-people-group"></i> Pilih Grup Yang Diizinkan:
+                </label>
+                <div id="groupListContainer" style="max-height:150px; overflow-y:auto;">
+                    <div style="font-size:0.7rem; color:#64748b; text-align:center;">Pilih bot untuk memuat daftar grup...</div>
+                </div>
+            </div>
+
             <button class="btn" onclick="saveBotSpecificConfig()"><i class="fa-solid fa-floppy-disk"></i> Simpan Pengaturan Bot</button>
         </div>
 
@@ -719,7 +740,7 @@
 
     <div class="page-section" id="sec-4">
         <div class="card">
-            <div class="card-title"><i class="fa-solid fa-server"></i> DATABASE</div>
+            <div class="card-title"><i class="fa-solid fa-server"></i> DATABASE & SESI STATUS</div>
             <div class="stats-grid" style="margin-bottom:12px;">
                 <div class="stat-box">
                     <i class="fa-solid fa-users"></i>
@@ -792,6 +813,7 @@
         const API_BASE = window.location.origin;
         let currentTab = 0;
         let activeBotsList = [];
+        let loadedGroupList = [];
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -890,6 +912,45 @@
             }
         }
 
+        function toggleGroupListVisibility() {
+            const mode = document.getElementById('botGroupModeSelect').value;
+            const area = document.getElementById('selectedGroupsArea');
+            if (mode === 'selected_groups') {
+                area.style.display = 'block';
+            } else {
+                area.style.display = 'none';
+            }
+        }
+
+        async function fetchBotGroups(botNumber, enabledGroups = []) {
+            const container = document.getElementById('groupListContainer');
+            container.innerHTML = '<div style="font-size:0.7rem; color:#64748b; text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat daftar grup...</div>';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/bot-groups/${botNumber}`);
+                const data = await res.json();
+
+                if (data.status && data.groups.length > 0) {
+                    loadedGroupList = data.groups;
+                    container.innerHTML = data.groups.map(g => {
+                        const isChecked = enabledGroups.includes(g.id) ? 'checked' : '';
+                        return `
+                            <div class="group-checkbox-item">
+                                <input type="checkbox" id="grp_${g.id}" value="${g.id}" ${isChecked}>
+                                <label for="grp_${g.id}" style="font-size:0.75rem; margin:0; cursor:pointer;">
+                                    <b>${g.subject}</b> <small style="color:#64748b;">(${g.participantsCount} member)</small>
+                                </label>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    container.innerHTML = '<div style="font-size:0.7rem; color:#64748b; text-align:center;">Bot ini belum bergabung di grup manapun.</div>';
+                }
+            } catch (e) {
+                container.innerHTML = '<div style="font-size:0.7rem; color:#dc2626; text-align:center;">Gagal memuat grup bot.</div>';
+            }
+        }
+
         async function loadSpecificBotConfig() {
             const botNumber = document.getElementById('configBotSelect').value;
             if (!botNumber) return;
@@ -903,6 +964,9 @@
                     document.getElementById('botAutoReadSelect').value = String(data.config.autoRead || false);
                     document.getElementById('botRoutineSelect').value = String(data.config.routineEnabled !== false);
                     document.getElementById('botGroupModeSelect').value = data.config.groupResponseMode || 'trigger_only';
+                    
+                    toggleGroupListVisibility();
+                    fetchBotGroups(botNumber, data.config.enabledGroups || []);
                 }
             } catch (e) {
                 showToast('Gagal memuat pengaturan bot');
@@ -917,13 +981,19 @@
             const routineEnabled = document.getElementById('botRoutineSelect').value === 'true';
             const groupResponseMode = document.getElementById('botGroupModeSelect').value;
 
+            // Ambil grup yang di-check
+            const enabledGroups = [];
+            document.querySelectorAll('#groupListContainer input[type="checkbox"]:checked').forEach(cb => {
+                enabledGroups.push(cb.value);
+            });
+
             if (!number) return showToast('Pilih bot terlebih dahulu!');
 
             try {
                 const res = await fetch(`${API_BASE}/api/bot-config`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ number, ownerNumber, ownerName, autoRead, routineEnabled, groupResponseMode })
+                    body: JSON.stringify({ number, ownerNumber, ownerName, autoRead, routineEnabled, groupResponseMode, enabledGroups })
                 });
                 const data = await res.json();
                 showToast(data.message);
